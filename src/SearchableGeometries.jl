@@ -3,7 +3,7 @@ module SearchableGeometries
     using LinearAlgebra
 
     # Data types
-    export SearchableGeometry, BoundingVolume
+    export SearchableGeometry, BoundingVolume, Ball
 
     import Base.getindex
 
@@ -11,14 +11,57 @@ module SearchableGeometries
 
     abstract type SearchableGeometry end
 
+    struct Ball <: SearchableGeometry
+        center::Vector                      # center of the ball
+        radius::Real                        # radius of the ball
+        p::Real                             # p-norm
+        dim::Integer                        # dimension of the ball
+        active_dim::Vector                  # active dimensions
+        inactive_dim::Vector                # inactive dimensions
+        is_active::Vector{Bool}             # is the dimension active?
+        embedding_dim::Integer              # embedding dimension
+
+        function Ball(
+            center::Vector{<:Real}, radius::Real; p=2::Real, 
+            active_dim=true::Bool, indices=(active_dim ? [eachindex(center)...] : Vector{Int}[])::Vector{Int}
+        )
+            if radius < 0
+                throw("SearchableGeometries.Ball: Cannot construct ball with negative radius.")
+            elseif radius == 0
+                return new(center, radius, p, 0, [], [eachindex(center)...], zeros(Bool, length(center)), length(center))
+            end
+
+            unique_indices = unique(indices)
+            if active_dim
+                is_active = zeros(Bool, length(center))
+                is_active[unique_indices] .= true
+                
+                all_dim = [eachindex(center)...]
+                inactive_dim = all_dim[is_active .== false]
+                dim = sum(is_active)
+                return new(center, radius, p, dim, unique_indices, inactive_dim, is_active, length(center))
+                
+
+            else
+                is_active = ones(Bool, length(center))
+                is_active[unique_indices] .= false
+
+                all_dim = [eachindex(center)...]
+                active_dim = all_dim[is_active]
+                dim = sum(is_active)
+                return new(center, radius, p, dim, active_dim, unique_indices, is_active, length(center))
+            end  
+        end
+    end
+
     struct BoundingVolume <: SearchableGeometry
-        lb::Vector
-        ub::Vector
-        is_empty::Bool
-        dim::Integer
-        active_dim::Vector
-        inactive_dim::Vector
-        is_active::Vector{Bool}
+        lb::Vector                  # lower bounds
+        ub::Vector                  # upper bounds
+        is_empty::Bool              # is the bounding volume empty?
+        dim::Integer                # dimension of the bounding volume
+        active_dim::Vector          # active dimensions
+        inactive_dim::Vector        # inactive dimensions
+        is_active::Vector{Bool}     # is the dimension active?
         
         # For invalid/empty Bounding Volumes (note an empty BV differs from a non-empty BV with dimension 0 (a point))
         function BoundingVolume()
