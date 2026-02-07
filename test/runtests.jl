@@ -1,6 +1,6 @@
 using SearchableGeometries
-using Test
+using SafeTestsets
 
-@testset "SearchableGeometries.jl" begin
-    # Write your tests here.
+@safetestset "SearchableGeometries.jl" begin
+    @safetestset "BoundingVolumes:" begin include("BoundingVolume_test.jl") end
 end
