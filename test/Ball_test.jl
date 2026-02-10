@@ -16,3 +16,47 @@ end
     @test all(ball.inactive_dim .== [1, 2])
     @test all(ball.is_active .== [false, false])
 end
+
+@testset "Constructing Balls: Low-Dimension Ball" begin
+    ball = Ball([0, 0, 0], 1, p=2, active_dim=true, indices=[1, 3])
+    @test ball.radius == 1
+    @test ball.p == 2
+    @test ball.dim == 2
+    @test ball.embedding_dim == 3
+    @test all(ball.active_dim .== [1, 3])
+    @test all(ball.inactive_dim .== [2])
+    @test all(ball.is_active .== [true, false, true])
+
+    ball = Ball([0, 0, 0], 1, p=2, active_dim=false, indices=[2])
+    @test ball.radius == 1
+    @test ball.p == 2
+    @test ball.dim == 2
+    @test ball.embedding_dim == 3
+    @test all(ball.active_dim .== [1, 3])
+    @test all(ball.inactive_dim .== [2])
+    @test all(ball.is_active .== [true, false, true])
+end
+
+@testset "Constructing Balls: Full-Dim, Euclidean Distance" begin
+    ball = Ball([0, 0, 0], 1)
+
+    @test ball.radius == 1
+    @test ball.p == 2
+    @test ball.dim == 3
+    @test ball.embedding_dim == 3
+    @test all(ball.active_dim .== [1, 2, 3])
+    @test all(ball.inactive_dim .== [])
+    @test all(ball.is_active .== [true, true, true])
+end
+
+@testset "Constructing Balls: Full-Dim, arbitrary p" begin
+    ball = Ball([0, 0, 0], 1, p=Inf)
+
+    @test ball.radius == 1
+    @test ball.p == Inf
+    @test ball.dim == 3
+    @test ball.embedding_dim == 3
+    @test all(ball.active_dim .== [1, 2, 3])
+    @test all(ball.inactive_dim .== [])
+    @test all(ball.is_active .== [true, true, true])
+end
