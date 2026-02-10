@@ -7,6 +7,9 @@ module SearchableGeometries
     
     # BV only functions
     export getClosestPoint, getFurthestPoint
+    
+    # General functions
+    export isContained
 
     import Base.getindex
 
@@ -131,4 +134,21 @@ module SearchableGeometries
         return furthest_pt
     end
 
+    function isContained(bv::BoundingVolume, query_pt::Array; include_boundary=true::Bool)
+        if (include_boundary && all(bv.lb .<= query_pt .<= bv.ub)) ||
+            (!include_boundary && all(bv.lb .< query_pt .< bv.ub))
+            return true
+        else
+            return false
+        end
+    end
+
+    function isContained(bv::BoundingVolume, query_bv::BoundingVolume; include_boundary=true::Bool)
+        if (!include_boundary && (all(query_bv.ub .< bv.ub) && all(query_bv.lb .> bv.lb))) ||
+            (include_boundary && (all(query_bv.ub .<= bv.ub) && all(query_bv.lb .>= bv.lb)))
+            return true
+        else
+            return false
+        end
+    end
 end
