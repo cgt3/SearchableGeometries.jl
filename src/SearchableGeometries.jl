@@ -3,7 +3,10 @@ module SearchableGeometries
     using LinearAlgebra
 
     # Data types
-    export SearchableGeometry, BoundingVolume, Ball
+    export SearchableGeometry, Ball, BoundingVolume
+    
+    # BV only functions
+    export getClosestPoint, getFurthestPoint
 
     import Base.getindex
 
@@ -91,6 +94,41 @@ module SearchableGeometries
 
             return new(lb, ub, false, dim, active_dim, inactive_dim, is_active)
         end
+    end
+
+    import Base.==
+    function Base.:(==)(bv1::BoundingVolume, bv2::BoundingVolume)
+        return all(bv1.lb .== bv2.lb) &&
+               all(bv1.ub .== bv2.ub) &&
+               bv1.is_empty == bv2.is_empty &&
+               bv1.dim == bv2.dim &&
+               all(bv1.active_dim .== bv2.active_dim) &&
+               all(bv1.inactive_dim .== bv2.inactive_dim) &&
+               all(bv1.is_active .== bv2.is_active)
+    end
+
+    function getClosestPoint(bv::BoundingVolume, query_pt::Array)
+        closest_pt = copy(query_pt)
+
+        I_lb = query_pt .< bv.lb
+        I_ub = query_pt .> bv.ub
+
+        closest_pt[I_lb] .= bv.lb[I_lb]
+        closest_pt[I_ub] .= bv.ub[I_ub]
+
+        return closest_pt
+    end
+
+    function getFurthestPoint(bv::BoundingVolume, query_pt::Array)
+        furthest_pt = similar(query_pt)
+
+        ub_is_closer = 0.5*(bv.ub + bv.lb) .<= query_pt
+        lb_is_closer = ub_is_closer .== false
+
+        furthest_pt[ub_is_closer] .= bv.lb[ub_is_closer]
+        furthest_pt[lb_is_closer] .= bv.ub[lb_is_closer]
+
+        return furthest_pt
     end
 
 end

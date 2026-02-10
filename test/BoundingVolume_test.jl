@@ -54,3 +54,52 @@ end
     @test bv.is_active == ones(Bool, 3)
 end
 
+# `getClosestPoint`: ------------------------------------------------------
+@testset "getClosestPoint(BV, pt): Interior Point (pt in BV)" begin
+    bv = BoundingVolume([0, 0], [1, 1])
+    pt = [0.5, 0.5]
+    
+    @test all(getClosestPoint(bv, pt) .== pt)
+end
+
+@testset "getClosestPoint(BV, pt): Boundary Point (pt on boundary of BV)" begin
+    bv = BoundingVolume([0, 0], [1, 1])
+    pt = [1, 0.5]
+    
+    @test all(getClosestPoint(bv, pt) .== pt)
+end
+
+@testset "getClosestPoint(BV, pt): Exterior Point (pt not in BV)" begin
+    bv = BoundingVolume([0, 0], [1, 1])
+    pt1 = [2, 2]
+    pt2 = [-1, -0.5]
+    
+    @test all(getClosestPoint(bv, pt1) .== bv.ub)
+    @test all(getClosestPoint(bv, pt2) .== bv.lb)
+end
+
+# `getFurthestPoint`: ------------------------------------------------------
+@testset "getFurthestPoint(BV, pt): Interior Point (pt in BV)" begin
+    bv = BoundingVolume([0, 0], [1, 1])
+    pt1 = [0.5, 0.5]
+    pt2 = [0.25, 0.25]
+    
+    @test all(getFurthestPoint(bv, pt1) .== bv.lb) # Note: ties goes to lb
+    @test all(getFurthestPoint(bv, pt2) .== bv.ub)
+end
+
+@testset "getFurthestPoint(BV, pt): Boundary Point (pt on boundary of BV)" begin
+    bv = BoundingVolume([0, 0], [1, 1])
+    pt = [0.25, 1]
+    
+    @test all(getFurthestPoint(bv, pt) .== [1, 0])
+end
+
+@testset "getFurthestPoint(BV, pt): Exterior Point (pt not in BV)" begin
+    bv = BoundingVolume([0, 0], [1, 1])
+    pt1 = [1.5, 1.5]
+    pt2 = [-1, -0.5]
+    
+    @test all(getFurthestPoint(bv, pt1) .== bv.lb)
+    @test all(getFurthestPoint(bv, pt2) .== bv.ub)
+end
