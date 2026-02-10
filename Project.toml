@@ -1,12 +1,17 @@
 name = "SearchableGeometries"
 uuid = "0d49ff20-b62b-4542-99e1-46442543f9f8"
 authors = ["Christina Taylor <cgtaylor@boisestate.edu>", "Emmanuel Kwame Ayanful <emmanuelayanful@u.boisestate.edu>"]
-version = "1.0.0-DEV"
+version = "0.1.0"
+
+[deps]
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 
 [compat]
 julia = "1.12"
 
-[deps]
-LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+[extras]
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test", "SafeTestsets"]
