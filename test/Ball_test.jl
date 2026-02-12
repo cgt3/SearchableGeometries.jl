@@ -18,7 +18,7 @@ end
 end
 
 @testset "Constructing Balls: Low-Dimension Ball" begin
-    ball = Ball([0, 0, 0], 1, p=2, active_dim=true, indices=[1, 3])
+    ball = Ball([0, 0, 0], 1, p=2, active_indices=true, indices=[1, 3])
     @test ball.radius == 1
     @test ball.p == 2
     @test ball.dim == 2
@@ -27,7 +27,7 @@ end
     @test all(ball.inactive_dim .== [2])
     @test all(ball.is_active .== [true, false, true])
 
-    ball = Ball([0, 0, 0], 1, p=2, active_dim=false, indices=[2])
+    ball = Ball([0, 0, 0], 1, p=2, active_indices=false, indices=[2])
     @test ball.radius == 1
     @test ball.p == 2
     @test ball.dim == 2
@@ -88,9 +88,9 @@ end
 end
 
 @testset "isContained(Ball, pt): Low-Dim Ball - Boundary point" begin
-    ball_p1 = Ball([0, 0, 0], 1, p=1, active_dim=true, indices=[1, 2])
-    ball_p2 = Ball([0, 0, 0], 1, p=2, active_dim=true, indices=[1, 2])
-    ball_pInf = Ball([0, 0, 0], 1, p=Inf, active_dim=true, indices=[1, 2])
+    ball_p1 = Ball([0, 0, 0], 1, p=1, active_indices=true, indices=[1, 2])
+    ball_p2 = Ball([0, 0, 0], 1, p=2, active_indices=true, indices=[1, 2])
+    ball_pInf = Ball([0, 0, 0], 1, p=Inf, active_indices=true, indices=[1, 2])
     
     pt = [1, 0, 0]
 
@@ -104,9 +104,9 @@ end
 end
 
 @testset "isContained(BV, pt): Low-Dim Ball - Exterior point" begin
-    ball_p1 = Ball([0, 0, 0], 1, p=1, active_dim=true, indices=[1, 2])
-    ball_p2 = Ball([0, 0, 0], 1, p=2, active_dim=true, indices=[1, 2])
-    ball_pInf = Ball([0, 0, 0], 1, p=Inf, active_dim=true, indices=[1, 2])
+    ball_p1 = Ball([0, 0, 0], 1, p=1, active_indices=true, indices=[1, 2])
+    ball_p2 = Ball([0, 0, 0], 1, p=2, active_indices=true, indices=[1, 2])
+    ball_pInf = Ball([0, 0, 0], 1, p=Inf, active_indices=true, indices=[1, 2])
     
     # Out-of-plane point
     pt = [0, 0, 1]

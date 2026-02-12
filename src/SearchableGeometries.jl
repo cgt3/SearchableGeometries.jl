@@ -168,7 +168,7 @@ module SearchableGeometries
 
         function Ball(
             center::Vector{<:Real}, radius::Real; p=2::Real, 
-            active_dim=true::Bool, indices=(active_dim ? [eachindex(center)...] : Vector{Int}[])::Vector{Int}
+            active_indices=true::Bool, indices=(active_indices ? [eachindex(center)...] : Vector{Int}[])::Vector{Int}
         )
             if radius < 0
                 throw("SearchableGeometries.Ball: Cannot construct ball with negative radius.")
@@ -177,7 +177,7 @@ module SearchableGeometries
             end
 
             unique_indices = unique(indices)
-            if active_dim
+            if active_indices
                 is_active = zeros(Bool, length(center))
                 is_active[unique_indices] .= true
                 
@@ -185,7 +185,6 @@ module SearchableGeometries
                 inactive_dim = all_dim[is_active .== false]
                 dim = sum(is_active)
                 return new(center, radius, p, dim, unique_indices, inactive_dim, is_active, length(center))
-                
 
             else
                 is_active = ones(Bool, length(center))
