@@ -2,65 +2,23 @@ module SearchableGeometries
 
     using LinearAlgebra
 
-    # Data types
+    # Data Types:
     export SearchableGeometry, Ball, BoundingVolume
     
-    # BV only functions
+    # BV only Functions:
     export getClosestPoint, getFurthestPoint, faceIndex2SpatialIndex, getFaceBoundingVolume
     
-    # General functions
+    # General Functions:
     export isContained, intersects, getIntersection
+
+    # Ball only Functions:
+    export getReducedDimBall, tightenBVBounds!
 
     import Base.getindex
 
     const DEFAULT_BV_POINT_TOL = 1e-15
 
     abstract type SearchableGeometry end
-
-    # Balls ---------------------------------------------------------------------------------
-
-    struct Ball <: SearchableGeometry
-        center::Vector                      # center of the ball
-        radius::Real                        # radius of the ball
-        p::Real                             # p-norm
-        dim::Integer                        # dimension of the ball
-        active_dim::Vector                  # active dimensions
-        inactive_dim::Vector                # inactive dimensions
-        is_active::Vector{Bool}             # is the dimension active?
-        embedding_dim::Integer              # embedding dimension
-
-        function Ball(
-            center::Vector{<:Real}, radius::Real; p=2::Real, 
-            active_dim=true::Bool, indices=(active_dim ? [eachindex(center)...] : Vector{Int}[])::Vector{Int}
-        )
-            if radius < 0
-                throw("SearchableGeometries.Ball: Cannot construct ball with negative radius.")
-            elseif radius == 0
-                return new(center, radius, p, 0, [], [eachindex(center)...], zeros(Bool, length(center)), length(center))
-            end
-
-            unique_indices = unique(indices)
-            if active_dim
-                is_active = zeros(Bool, length(center))
-                is_active[unique_indices] .= true
-                
-                all_dim = [eachindex(center)...]
-                inactive_dim = all_dim[is_active .== false]
-                dim = sum(is_active)
-                return new(center, radius, p, dim, unique_indices, inactive_dim, is_active, length(center))
-                
-
-            else
-                is_active = ones(Bool, length(center))
-                is_active[unique_indices] .= false
-
-                all_dim = [eachindex(center)...]
-                active_dim = all_dim[is_active]
-                dim = sum(is_active)
-                return new(center, radius, p, dim, active_dim, unique_indices, is_active, length(center))
-            end  
-        end
-    end
 
     # Bounding Volumes ----------------------------------------------------------------------
 
@@ -194,5 +152,91 @@ module SearchableGeometries
         end
 
         return BoundingVolume(face_lb, face_ub; tol=tol)
+    end
+
+    # Balls ---------------------------------------------------------------------------------
+
+    struct Ball <: SearchableGeometry
+        center::Vector                      # center of the ball
+        radius::Real                        # radius of the ball
+        p::Real                             # p-norm
+        dim::Integer                        # dimension of the ball
+        active_dim::Vector                  # active dimensions
+        inactive_dim::Vector                # inactive dimensions
+        is_active::Vector{Bool}             # is the dimension active?
+        embedding_dim::Integer              # embedding dimension
+
+        function Ball(
+            center::Vector{<:Real}, radius::Real; p=2::Real, 
+            active_dim=true::Bool, indices=(active_dim ? [eachindex(center)...] : Vector{Int}[])::Vector{Int}
+        )
+            if radius < 0
+                throw("SearchableGeometries.Ball: Cannot construct ball with negative radius.")
+            elseif radius == 0
+                return new(center, radius, p, 0, [], [eachindex(center)...], zeros(Bool, length(center)), length(center))
+            end
+
+            unique_indices = unique(indices)
+            if active_dim
+                is_active = zeros(Bool, length(center))
+                is_active[unique_indices] .= true
+                
+                all_dim = [eachindex(center)...]
+                inactive_dim = all_dim[is_active .== false]
+                dim = sum(is_active)
+                return new(center, radius, p, dim, unique_indices, inactive_dim, is_active, length(center))
+                
+
+            else
+                is_active = ones(Bool, length(center))
+                is_active[unique_indices] .= false
+
+                all_dim = [eachindex(center)...]
+                active_dim = all_dim[is_active]
+                dim = sum(is_active)
+                return new(center, radius, p, dim, active_dim, unique_indices, is_active, length(center))
+            end  
+        end
+    end
+
+    import Base.==
+    function Base.:(==)(ball1::Ball, ball2::Ball)
+        return all(ball1.center .== ball2.center) &&
+               ball1.radius == ball2.radius &&
+               ball1.p == ball2.p &&
+               ball1.dim == ball2.dim &&
+               all(ball1.active_dim .== ball2.active_dim) &&
+               all(ball1.inactive_dim .== ball2.inactive_dim) &&
+               all(ball1.is_active .== ball2.is_active) &&
+               ball1.embedding_dim == ball2.embedding_dim
+    end
+
+    function BoundingVolume(ball::Ball; tol=DEFAULT_BV_POINT_TOL::Real)
+        lb = ball.center .- ball.radius
+        ub = ball.center .+ ball.radius
+        return BoundingVolume(lb, ub; tol=tol)
+    end
+
+    function isContained(ball::Ball, query_pt::Vector{<:Real}; include_boundary=true::Bool, tol=DEFAULT_BV_POINT_TOL::Real)
+        if length(query_pt) != ball.embedding_dim
+            throw("Point dimension($(length(query_pt))) does not match ball embedding dimension($(ball.embedding_dim))")
+        end
+
+        if ball.dim < length(ball.center) # The ball does not have full dimension
+            for d_fixed in ball.inactive_dim
+                if abs(query_pt[d_fixed] - ball.center[d_fixed]) > tol
+                    return false
+                end
+            end
+            R_query = norm(query_pt[ball.active_dim] - ball.center[ball.active_dim], ball.p)
+        else # The ball has full dimension
+            R_query = norm(query_pt - ball.center, ball.p)
+        end
+
+        return include_boundary ? R_query <= ball.radius : R_query < ball.radius
+    end
+
+    function isContained(bv::BoundingVolume, query_ball::Ball; include_boundary=true::Bool, tol=DEFAULT_BV_POINT_TOL::Real)
+        return isContained(bv, BoundingVolume(query_ball; tol=tol), include_boundary=include_boundary)
     end
 end

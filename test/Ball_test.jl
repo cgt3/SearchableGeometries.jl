@@ -60,3 +60,122 @@ end
     @test all(ball.inactive_dim .== [])
     @test all(ball.is_active .== [true, true, true])
 end
+
+# Ball -> BV: --------------------------------------------------------------
+
+# `isContained(Ball, pt)` --------------------------------------------------
+@testset "isContained(Ball, pt):" begin
+    ball = Ball([0, 0, 0], 1)
+    pt = [0, 0]
+
+    @test_throws "Point dimension($(length(pt))) does not match ball embedding dimension($(ball.embedding_dim))" isContained(ball, pt)
+end
+
+@testset "isContained(Ball, Pt): Zero-Dim Ball" begin
+    ball_p1 = Ball([0, 0], 0, p=1)
+    ball_p2 = Ball([0, 0], 0, p=2)
+    ball_pInf = Ball([0, 0], 0, p=Inf)
+
+    pt = [0, 0]
+
+    @test isContained(ball_p1, pt, include_boundary=true)
+    @test isContained(ball_p2, pt, include_boundary=true)
+    @test isContained(ball_pInf, pt, include_boundary=true)
+
+    @test !isContained(ball_p1, pt, include_boundary=false)
+    @test !isContained(ball_p2, pt, include_boundary=false)
+    @test !isContained(ball_pInf, pt, include_boundary=false)
+end
+
+@testset "isContained(Ball, pt): Low-Dim Ball - Boundary point" begin
+    ball_p1 = Ball([0, 0, 0], 1, p=1, active_dim=true, indices=[1, 2])
+    ball_p2 = Ball([0, 0, 0], 1, p=2, active_dim=true, indices=[1, 2])
+    ball_pInf = Ball([0, 0, 0], 1, p=Inf, active_dim=true, indices=[1, 2])
+    
+    pt = [1, 0, 0]
+
+    @test isContained(ball_p1, pt, include_boundary=true)
+    @test isContained(ball_p2, pt, include_boundary=true)
+    @test isContained(ball_pInf, pt, include_boundary=true)
+
+    @test !isContained(ball_p1, pt, include_boundary=false)
+    @test !isContained(ball_p2, pt, include_boundary=false)
+    @test !isContained(ball_pInf, pt, include_boundary=false)
+end
+
+@testset "isContained(BV, pt): Low-Dim Ball - Exterior point" begin
+    ball_p1 = Ball([0, 0, 0], 1, p=1, active_dim=true, indices=[1, 2])
+    ball_p2 = Ball([0, 0, 0], 1, p=2, active_dim=true, indices=[1, 2])
+    ball_pInf = Ball([0, 0, 0], 1, p=Inf, active_dim=true, indices=[1, 2])
+    
+    # Out-of-plane point
+    pt = [0, 0, 1]
+
+    @test !isContained(ball_p1, pt, include_boundary=true)
+    @test !isContained(ball_p2, pt, include_boundary=true)
+    @test !isContained(ball_pInf, pt, include_boundary=true)
+
+    @test !isContained(ball_p1, pt, include_boundary=false)
+    @test !isContained(ball_p2, pt, include_boundary=false)
+    @test !isContained(ball_pInf, pt, include_boundary=false)
+
+    # In-plane exterior point
+    pt = [2, 2, 0]
+
+    @test !isContained(ball_p1, pt, include_boundary=true)
+    @test !isContained(ball_p2, pt, include_boundary=true)
+    @test !isContained(ball_pInf, pt, include_boundary=true)
+
+    @test !isContained(ball_p1, pt, include_boundary=false)
+    @test !isContained(ball_p2, pt, include_boundary=false)
+    @test !isContained(ball_pInf, pt, include_boundary=false)
+end
+
+@testset "isContained(BV, pt): Full-Dim - Interior point" begin
+    ball_p1 = Ball([0, 0], 1, p=1)
+    ball_p2 = Ball([0, 0], 1, p=2)
+    ball_pInf = Ball([0, 0], 1, p=Inf)
+    
+    pt = [0.25, 0.25]
+
+    @test isContained(ball_p1, pt, include_boundary=true)
+    @test isContained(ball_p2, pt, include_boundary=true)
+    @test isContained(ball_pInf, pt, include_boundary=true)
+
+    @test isContained(ball_p1, pt, include_boundary=false)
+    @test isContained(ball_p2, pt, include_boundary=false)
+    @test isContained(ball_pInf, pt, include_boundary=false)
+end
+
+@testset "isContained(BV, pt): Full-Dim - Boundary point" begin
+    ball_p1 = Ball([0, 0], 1, p=1)
+    ball_p2 = Ball([0, 0], 1, p=2)
+    ball_pInf = Ball([0, 0], 1, p=Inf)
+    
+    pt = [1, 0]
+
+    @test isContained(ball_p1, pt, include_boundary=true)
+    @test isContained(ball_p2, pt, include_boundary=true)
+    @test isContained(ball_pInf, pt, include_boundary=true)
+
+    @test !isContained(ball_p1, pt, include_boundary=false)
+    @test !isContained(ball_p2, pt, include_boundary=false)
+    @test !isContained(ball_pInf, pt, include_boundary=false)
+end
+    
+
+@testset "isContained(Ball, pt): Full-Dim Ball - Exterior point" begin
+    ball_p1 = Ball([0, 0], 1, p=1)
+    ball_p2 = Ball([0, 0], 1, p=2)
+    ball_pInf = Ball([0, 0], 1, p=Inf)
+    
+    pt = [2, 2]
+
+    @test !isContained(ball_p1, pt, include_boundary=true)
+    @test !isContained(ball_p2, pt, include_boundary=true)
+    @test !isContained(ball_pInf, pt, include_boundary=true)
+
+    @test !isContained(ball_p1, pt, include_boundary=false)
+    @test !isContained(ball_p2, pt, include_boundary=false)
+    @test !isContained(ball_pInf, pt, include_boundary=false)
+end
