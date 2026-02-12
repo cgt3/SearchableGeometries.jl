@@ -178,4 +178,21 @@ module SearchableGeometries
 
         return BoundingVolume(new_lb, new_ub; tol=tol)
     end
+
+    function faceIndex2SpatialIndex(face_index::Integer, num_dim::Integer)
+        return face_index <= num_dim ? face_index : face_index - num_dim
+    end
+
+    function getFaceBoundingVolume(face_index::Integer, bv::BoundingVolume; tol=DEFAULT_BV_POINT_TOL::Real)
+        face_lb, face_ub = copy(bv.lb), copy(bv.ub)
+        
+        if face_index <= length(bv.lb) # Lower bound face
+            face_ub[face_index] = bv.lb[face_index]
+        else # Upper bound face
+            d = face_index - length(bv.lb)
+            face_lb[d] = bv.ub[d]
+        end
+
+        return BoundingVolume(face_lb, face_ub; tol=tol)
+    end
 end

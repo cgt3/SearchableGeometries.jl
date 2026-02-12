@@ -222,3 +222,38 @@ end
     intersection = getIntersection(bv, bv_overlapping)
     @test intersection == intersection_true
 end
+
+# `faceIndex2SpatialIndex`: ------------------------------------------------------
+@testset "faceIndex2SpatialIndex(face_index, num_dim)" begin
+    num_dim = 3
+    @test faceIndex2SpatialIndex(1, num_dim) == 1
+    @test faceIndex2SpatialIndex(2, num_dim) == 2
+    @test faceIndex2SpatialIndex(3, num_dim) == 3
+    @test faceIndex2SpatialIndex(4, num_dim) == 1
+    @test faceIndex2SpatialIndex(5, num_dim) == 2
+    @test faceIndex2SpatialIndex(6, num_dim) == 3
+end
+
+# `getFaceBoundingVolume`: ------------------------------------------------------
+@testset "getFaceBoundingVolume(face_index, bv)" begin
+    bv = BoundingVolume([0, 0, 0], [1, 1, 1])
+
+    left = BoundingVolume([0, 0, 0], [0, 1, 1])
+    right = BoundingVolume([1, 0, 0], [1, 1, 1])
+
+    front = BoundingVolume([0, 0, 0], [1, 0, 1])
+    back = BoundingVolume([0, 1, 0], [1, 1, 1])
+
+    bottom = BoundingVolume([0, 0, 0], [1, 1, 0])
+    top = BoundingVolume([0, 0, 1], [1, 1, 1])
+    
+    # Lower bound faces
+    @test getFaceBoundingVolume(1, bv) == left
+    @test getFaceBoundingVolume(2, bv) == front
+    @test getFaceBoundingVolume(3, bv) == bottom
+    
+    # Upper bound faces
+    @test getFaceBoundingVolume(4, bv) == right
+    @test getFaceBoundingVolume(5, bv) == back
+    @test getFaceBoundingVolume(6, bv) == top
+end
