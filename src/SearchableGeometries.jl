@@ -6,16 +6,18 @@ module SearchableGeometries
     export SearchableGeometry, Ball, BoundingVolume
     
     # BV only functions
-    export getClosestPoint, getFurthestPoint
+    export getClosestPoint, getFurthestPoint, faceIndex2SpatialIndex, getFaceBoundingVolume
     
     # General functions
-    export isContained
+    export isContained, intersects, getIntersection
 
     import Base.getindex
 
     const DEFAULT_BV_POINT_TOL = 1e-15
 
     abstract type SearchableGeometry end
+
+    # Balls ---------------------------------------------------------------------------------
 
     struct Ball <: SearchableGeometry
         center::Vector                      # center of the ball
@@ -59,6 +61,8 @@ module SearchableGeometries
             end  
         end
     end
+
+    # Bounding Volumes ----------------------------------------------------------------------
 
     struct BoundingVolume <: SearchableGeometry
         lb::Vector                  # lower bounds
@@ -150,5 +154,28 @@ module SearchableGeometries
         else
             return false
         end
+    end
+
+    function intersects(bv1::BoundingVolume, bv2::BoundingVolume; include_boundary=true::Bool)
+        if (include_boundary && (any(bv1.lb .> bv2.ub) || any(bv1.ub .< bv2.lb))) ||
+            (!include_boundary && (any(bv1.lb .>= bv2.ub) || any(bv1.ub .<= bv2.lb)))
+                return false
+        else
+            return true
+        end
+    end
+
+    function getIntersection(bv1::BoundingVolume, bv2::BoundingVolume; tol=DEFAULT_BV_POINT_TOL::Real)
+        if bv1.is_empty || bv2.is_empty
+            return BoundingVolume()
+        end
+        
+        new_lb = max.(bv1.lb, bv2.lb)
+        new_ub = min.(bv1.ub, bv2.ub)
+        if any(new_lb .> new_ub)
+            return BoundingVolume()
+        end
+
+        return BoundingVolume(new_lb, new_ub; tol=tol)
     end
 end

@@ -158,3 +158,67 @@ end
     @test isContained(bv, bv_query, include_boundary=true) == true
     @test isContained(bv, bv_query, include_boundary=false) == false
 end
+
+# `intersects`: ----------------------------------------------------------
+@testset "intersects(BV, BV): Empty Intersection" begin
+    bv1 = BoundingVolume([1, 2], [3, 4])
+    bv2 = BoundingVolume([-3, -4], [-1, -2])
+
+    @test intersects(bv1, bv2, include_boundary=true) == false
+    @test intersects(bv1, bv2, include_boundary=false) == false
+end
+
+@testset "intersects(BV, BV): Low-Dim Intersection" begin
+    bv1 = BoundingVolume([1, 2], [3, 4])
+    bv2 = BoundingVolume([0, 0], [1, 2])
+
+    @test intersects(bv1, bv2, include_boundary=true) == true
+    @test intersects(bv1, bv2, include_boundary=false) == false
+end
+
+@testset "intersects(BV, BV): Full-Dim Intersection" begin
+    bv1 = BoundingVolume([1, 2], [3, 4])
+    bv2 = BoundingVolume([0, 0], [2, 3])
+
+    @test intersects(bv1, bv2, include_boundary=true) == true
+    @test intersects(bv1, bv2, include_boundary=false) == true
+end
+
+# `getIntersection`: ------------------------------------------------------
+@testset "getIntersection(BV, BV): Empty Intersection" begin
+    bv1 = BoundingVolume([1, 2], [3, 4])
+    bv2 = BoundingVolume([-3, -4], [-1, -2])
+
+    intersection = getIntersection(bv1, bv2)
+    @test intersection.is_empty == true
+end
+
+@testset "getIntersection(BV, BV): Low-Dim Intersection" begin
+    bv = BoundingVolume([0, 0], [1, 1])
+    
+    bv_pt = BoundingVolume([-1, -1], [0, 0])
+    pt_intersection = getIntersection(bv, bv_pt)
+    @test pt_intersection.dim == 0
+    @test pt_intersection.is_empty == false
+    @test pt_intersection.lb == pt_intersection.ub
+
+    bv_line = BoundingVolume([-1, 0], [0, 1])
+    line_intersection = getIntersection(bv, bv_line)
+    @test line_intersection.dim == 1
+    @test line_intersection.is_empty == false
+    @test line_intersection.lb == [0, 0]
+    @test line_intersection.ub == [0, 1]
+end
+
+@testset "getIntersection(BV, BV): Full-Dim Intersection" begin
+    bv = BoundingVolume([0, 0], [1, 1])
+    
+    bv_interior = BoundingVolume([0.25, 0.25], [0.75, 0.75])
+    interior_intersection = getIntersection(bv, bv_interior)
+    @test interior_intersection == bv_interior
+
+    bv_overlapping = BoundingVolume([-1, -1], [0.25, 0.5])
+    intersection_true = BoundingVolume([0, 0], [0.25, 0.5])
+    intersection = getIntersection(bv, bv_overlapping)
+    @test intersection == intersection_true
+end
