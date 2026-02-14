@@ -238,4 +238,9 @@ module SearchableGeometries
     function isContained(bv::BoundingVolume, query_ball::Ball; include_boundary=true::Bool, tol=DEFAULT_BV_POINT_TOL::Real)
         return isContained(bv, BoundingVolume(query_ball; tol=tol), include_boundary=include_boundary)
     end
+
+    function isContained(ball::Ball, query_bv::BoundingVolume; include_boundary=true::Bool)
+        furthest_pt = getFurthestPoint(query_bv, ball.center)
+        return isContained(ball, furthest_pt, include_boundary=include_boundary)
+    end
 end
