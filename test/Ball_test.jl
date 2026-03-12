@@ -315,3 +315,54 @@ end
     @test !isContained(ball_p2, bv, include_boundary=false)
     @test !isContained(ball_pInf, bv, include_boundary=false)
 end
+
+# `intersects(BV, Ball)` --------------------------------------------------
+@testset "intersects(BV, Ball): BV contains Ball" begin
+    bv = BoundingVolume([0, 0], [1, 1])
+    # Ball centered at [0.5, 0.5] with radius 0.25 has bounds [0.25, 0.25], [0.75, 0.75].
+    ball_p1 = Ball([0.5, 0.5], 0.25, p=1)
+    ball_p2 = Ball([0.5, 0.5], 0.25, p=2)
+    ball_pInf = Ball([0.5, 0.5], 0.25, p=Inf)
+
+    @test intersects(bv, ball_p1; include_boundary=true)
+    @test intersects(bv, ball_p2; include_boundary=true)
+    @test intersects(bv, ball_pInf; include_boundary=true)
+
+    @test intersects(bv, ball_p1; include_boundary=false)
+    @test intersects(bv, ball_p2; include_boundary=false)
+    @test intersects(bv, ball_pInf; include_boundary=false)
+end
+
+@testset "intersects(BV, Ball): BV intersects Ball at Boundary" begin
+    bv = BoundingVolume([0.0, 0.0], [1.0, 1.0])
+
+    # Ball centered at [1.5, 0.5] with radius 0.5 touches the right edge of the BV at exactly [1.0, 0.5].
+    ball_p1 = Ball([1.5, 0.5], 0.5, p=1)
+    ball_p2 = Ball([1.5, 0.5], 0.5, p=2)
+    ball_pInf = Ball([1.5, 0.5], 0.5, p=Inf)
+
+    @test intersects(bv, ball_p1; include_boundary=true)
+    @test intersects(bv, ball_p2; include_boundary=true)
+    @test intersects(bv, ball_pInf; include_boundary=true)
+
+    @test !intersects(bv, ball_p1; include_boundary=false)
+    @test !intersects(bv, ball_p2; include_boundary=false)
+    @test !intersects(bv, ball_pInf; include_boundary=false)
+end
+
+@testset "intersects(BV, Ball): BV does not intersect Ball" begin
+    bv = BoundingVolume([0.0, 0.0], [1.0, 1.0])
+
+    # Ball centered at [1.5, 1.5] with radius 0.25 has bounds [1.25, 1.25], [1.75, 1.75].
+    ball_p1 = Ball([1.5, 1.5], 0.25, p=1)
+    ball_p2 = Ball([1.5, 1.5], 0.25, p=2)
+    ball_pInf = Ball([1.5, 1.5], 0.25, p=Inf)
+
+    @test !intersects(bv, ball_p1; include_boundary=true)
+    @test !intersects(bv, ball_p2; include_boundary=true)
+    @test !intersects(bv, ball_pInf; include_boundary=true)
+
+    @test !intersects(bv, ball_p1; include_boundary=false)
+    @test !intersects(bv, ball_p2; include_boundary=false)
+    @test !intersects(bv, ball_pInf; include_boundary=false)
+end
