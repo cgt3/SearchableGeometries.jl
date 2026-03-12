@@ -3,7 +3,7 @@ using SearchableGeometries
 # Ball Constructors --------------------------------------------------------
 @testset "Constructing Balls: Invalid radius" begin
     @test_throws "Cannot construct ball with negative radius" Ball([0, 0], -1)
-    
+
 end
 
 @testset "Constructing Balls: Zero Radius" begin
@@ -92,7 +92,7 @@ end
     ball_p1 = Ball([0, 0, 0], 1, p=1, active_indices=true, indices=[1, 2])
     ball_p2 = Ball([0, 0, 0], 1, p=2, active_indices=true, indices=[1, 2])
     ball_pInf = Ball([0, 0, 0], 1, p=Inf, active_indices=true, indices=[1, 2])
-    
+
     pt = [1, 0, 0]
 
     @test isContained(ball_p1, pt, include_boundary=true)
@@ -108,7 +108,7 @@ end
     ball_p1 = Ball([0, 0, 0], 1, p=1, active_indices=true, indices=[1, 2])
     ball_p2 = Ball([0, 0, 0], 1, p=2, active_indices=true, indices=[1, 2])
     ball_pInf = Ball([0, 0, 0], 1, p=Inf, active_indices=true, indices=[1, 2])
-    
+
     # Out-of-plane point
     pt = [0, 0, 1]
 
@@ -136,7 +136,7 @@ end
     ball_p1 = Ball([0, 0], 1, p=1)
     ball_p2 = Ball([0, 0], 1, p=2)
     ball_pInf = Ball([0, 0], 1, p=Inf)
-    
+
     pt = [0.25, 0.25]
 
     @test isContained(ball_p1, pt, include_boundary=true)
@@ -152,7 +152,7 @@ end
     ball_p1 = Ball([0, 0], 1, p=1)
     ball_p2 = Ball([0, 0], 1, p=2)
     ball_pInf = Ball([0, 0], 1, p=Inf)
-    
+
     pt = [1, 0]
 
     @test isContained(ball_p1, pt, include_boundary=true)
@@ -163,12 +163,12 @@ end
     @test !isContained(ball_p2, pt, include_boundary=false)
     @test !isContained(ball_pInf, pt, include_boundary=false)
 end
-    
+
 @testset "isContained(Ball, pt): Full-Dim Ball - Exterior point" begin
     ball_p1 = Ball([0, 0], 1, p=1)
     ball_p2 = Ball([0, 0], 1, p=2)
     ball_pInf = Ball([0, 0], 1, p=Inf)
-    
+
     pt = [2, 2]
 
     @test !isContained(ball_p1, pt, include_boundary=true)
@@ -183,7 +183,7 @@ end
 # `isContained(BV, Ball)` --------------------------------------------------
 @testset "isContained(BV, Ball): Interior Ball" begin
     bv = BoundingVolume([0, 0], [1, 1])
-    # Ball centered at [0.5, 0.5] with radius 0.25 -> bounds [0.25, 0.25], [0.75, 0.75]. STRICTLY INSIDE.
+    # Ball centered at [0.5, 0.5] with radius 0.25 has bounds [0.25, 0.25], [0.75, 0.75].
     ball_p1 = Ball([0.5, 0.5], 0.25, p=1)
     ball_p2 = Ball([0.5, 0.5], 0.25, p=2)
     ball_pInf = Ball([0.5, 0.5], 0.25, p=Inf)
@@ -199,7 +199,7 @@ end
 
 @testset "isContained(BV, Ball): Boundary Ball" begin
     bv = BoundingVolume([0, 0], [1, 1])
-    # Ball centered at [0.5, 0.5] with radius 0.5 -> bounds [0.0, 0.0], [1.0, 1.0]. MATCHES BV BOUNDARY.
+    # Ball centered at [0.5, 0.5] with radius 0.5 has bounds [0.0, 0.0], [1.0, 1.0].
     # This ball "meets the boundary" everywhere.
     ball_p1 = Ball([0.5, 0.5], 0.5, p=1)
     ball_p2 = Ball([0.5, 0.5], 0.5, p=2)
@@ -216,8 +216,8 @@ end
 
 @testset "isContained(BV, Ball): Partial Overlap Ball" begin
     bv = BoundingVolume([0, 0], [1, 1])
-    # Ball centered at [1, 0.5] with radius 0.5 -> bounds [0.5, 0], [1.5, 1]. INTERSECTS BUT OVERFLOWS.
-    ball_p1 = Ball([1, 0.5], 0.5, p=1) 
+    # Ball centered at [1, 0.5] with radius 0.5 has bounds [0.5, 0], [1.5, 1].
+    ball_p1 = Ball([1, 0.5], 0.5, p=1)
     ball_p2 = Ball([1, 0.5], 0.5, p=2)
     ball_pInf = Ball([1, 0.5], 0.5, p=Inf)
 
@@ -232,7 +232,7 @@ end
 
 @testset "isContained(BV, Ball): Exterior Ball" begin
     bv = BoundingVolume([0, 0], [1, 1])
-    # Ball centered at [2, 2] with radius 0.25 -> bounds [1.75, 1.75], [2.25, 2.25]. OUTSIDE.
+    # Ball centered at [2, 2] with radius 0.25 has bounds [1.75, 1.75], [2.25, 2.25].
     ball_p1 = Ball([2, 2], 0.25, p=1)
     ball_p2 = Ball([2, 2], 0.25, p=2)
     ball_pInf = Ball([2, 2], 0.25, p=Inf)
@@ -247,68 +247,71 @@ end
 end
 
 
-# # `isContained(Ball, BV)` --------------------------------------------------
-# @testset "isContained(Ball, BV): Interior Ball" begin
-#     bv = BoundingVolume([0, 0], [1, 1])
-#     # Ball centered at 0.5 with radius 0.25 -> bounds [0.25, 0.75]. STRICTLY INSIDE.
-#     ball_p1 = Ball([0.5, 0.5], 0.25, p=1)
-#     ball_p2 = Ball([0.5, 0.5], 0.25, p=2)
-#     ball_pInf = Ball([0.5, 0.5], 0.25, p=Inf)
+# `isContained(Ball, BV)` --------------------------------------------------
+@testset "isContained(Ball, BV): Interior BV" begin
+    ball_p1 = Ball([0.0, 0.0], 1.0, p=1)
+    ball_p2 = Ball([0.0, 0.0], 1.0, p=2)
+    ball_pInf = Ball([0.0, 0.0], 1.0, p=Inf)
 
-#     @test isContained(ball_p1, bv, include_boundary=true)
-#     @test isContained(ball_p2, bv, include_boundary=true)
-#     @test isContained(ball_pInf, bv, include_boundary=true)
+    # BV with furthest point from centre of ball being [-0.25, -0.25]
+    bv = BoundingVolume([-0.25, -0.25], [0.25, 0.25])
 
-#     @test isContained(ball_p1, bv, include_boundary=false)
-#     @test isContained(ball_p2, bv, include_boundary=false)
-#     @test isContained(ball_pInf, bv, include_boundary=false)
-# end
+    @test isContained(ball_p1, bv, include_boundary=true)
+    @test isContained(ball_p2, bv, include_boundary=true)
+    @test isContained(ball_pInf, bv, include_boundary=true)
 
-# @testset "isContained(Ball, BV): Boundary Ball" begin
-#     bv = BoundingVolume([0, 0], [1, 1])
-#     # Ball centered at 0.5 with radius 0.5 -> bounds [0.0, 1.0]. MATCHES BV BOUNDARY.
-#     # This ball "meets the boundary" everywhere.
-#     ball_p1 = Ball([0.5, 0.5], 0.5, p=1)
-#     ball_p2 = Ball([0.5, 0.5], 0.5, p=2)
-#     ball_pInf = Ball([0.5, 0.5], 0.5, p=Inf)
+    @test isContained(ball_p1, bv, include_boundary=false)
+    @test isContained(ball_p2, bv, include_boundary=false)
+    @test isContained(ball_pInf, bv, include_boundary=false)
+end
 
-#     @test isContained(ball_p1, bv, include_boundary=true)
-#     @test isContained(ball_p2, bv, include_boundary=true)
-#     @test isContained(ball_pInf, bv, include_boundary=true)
+@testset "isContained(Ball, BV): Boundary BV" begin
+    ball_p1 = Ball([0.0, 0.0], 1.0, p=1)
+    ball_p2 = Ball([0.0, 0.0], 1.0, p=2)
+    ball_pInf = Ball([0.0, 0.0], 1.0, p=Inf)
 
-#     @test !isContained(ball_p1, bv, include_boundary=false)
-#     @test !isContained(ball_p2, bv, include_boundary=false)
-#     @test !isContained(ball_pInf, bv, include_boundary=false)
-# end
+    # BV with furthest point from centre of ball being [-0.5, -0.5]
+    bv = BoundingVolume([-0.5, -0.5], [0.5, 0.5])
 
-# @testset "isContained(Ball, BV): Partial Overlap Ball" begin
-#     bv = BoundingVolume([0, 0], [1, 1])
-#     # Ball centered at 1.0 with radius 0.25 -> bounds [0.5, 1.5]. INTERSECTS BUT OVERFLOWS.
-#     ball_p1 = Ball([1.0, 0.5], 0.5, p=1) 
-#     ball_p2 = Ball([1.0, 0.5], 0.5, p=2)
-#     ball_pInf = Ball([1.0, 0.5], 0.5, p=Inf)
+    @test isContained(ball_p1, bv, include_boundary=true)
+    @test isContained(ball_p2, bv, include_boundary=true)
+    @test isContained(ball_pInf, bv, include_boundary=true)
 
-#     @test !isContained(ball_p1, bv, include_boundary=true)
-#     @test !isContained(ball_p2, bv, include_boundary=true)
-#     @test !isContained(ball_pInf, bv, include_boundary=true)
+    @test !isContained(ball_p1, bv, include_boundary=false)
+    @test isContained(ball_p2, bv, include_boundary=false)
+    @test isContained(ball_pInf, bv, include_boundary=false)
+end
 
-#     @test !isContained(ball_p1, bv, include_boundary=false)
-#     @test !isContained(ball_p2, bv, include_boundary=false)
-#     @test !isContained(ball_pInf, bv, include_boundary=false)
-# end
+@testset "isContained(Ball, BV): Partial Overlap BV" begin
+    ball_p1 = Ball([0.0, 0.0], 1.0, p=1)
+    ball_p2 = Ball([0.0, 0.0], 1.0, p=2)
+    ball_pInf = Ball([0.0, 0.0], 1.0, p=Inf)
 
-# @testset "isContained(Ball, BV): Exterior Ball" begin
-#     bv = BoundingVolume([0, 0], [1, 1])
-#     # Ball centered at 2.0 with radius 0.25 -> bounds [1.75, 2.25]. OUTSIDE.
-#     ball_p1 = Ball([2.0, 0.5], 0.25, p=1)
-#     ball_p2 = Ball([2.0, 0.5], 0.25, p=2)
-#     ball_pInf = Ball([2.0, 0.5], 0.25, p=Inf)
+    # BV with furthest point from centre of ball being [1.2, 1.2]
+    bv = BoundingVolume([0, 0], [1.2, 1.2])
 
-#     @test !isContained(ball_p1, bv, include_boundary=true)
-#     @test !isContained(ball_p2, bv, include_boundary=true)
-#     @test !isContained(ball_pInf, bv, include_boundary=true)
+    @test !isContained(ball_p1, bv, include_boundary=true)
+    @test !isContained(ball_p2, bv, include_boundary=true)
+    @test !isContained(ball_pInf, bv, include_boundary=true)
 
-#     @test !isContained(ball_p1, bv, include_boundary=false)
-#     @test !isContained(ball_p2, bv, include_boundary=false)
-#     @test !isContained(ball_pInf, bv, include_boundary=false)
-# end
+    @test !isContained(ball_p1, bv, include_boundary=false)
+    @test !isContained(ball_p2, bv, include_boundary=false)
+    @test !isContained(ball_pInf, bv, include_boundary=false)
+end
+
+@testset "isContained(Ball, BV): Exterior BV" begin
+    ball_p1 = Ball([0.0, 0.0], 1.0, p=1)
+    ball_p2 = Ball([0.0, 0.0], 1.0, p=2)
+    ball_pInf = Ball([0.0, 0.0], 1.0, p=Inf)
+
+    # BV with furthest point from centre of ball being [-1.5, -1.5]
+    bv = BoundingVolume([-1.5, -1.5], [1.5, 1.5])
+
+    @test !isContained(ball_p1, bv, include_boundary=true)
+    @test !isContained(ball_p2, bv, include_boundary=true)
+    @test !isContained(ball_pInf, bv, include_boundary=true)
+
+    @test !isContained(ball_p1, bv, include_boundary=false)
+    @test !isContained(ball_p2, bv, include_boundary=false)
+    @test !isContained(ball_pInf, bv, include_boundary=false)
+end
