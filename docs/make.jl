@@ -1,9 +1,14 @@
 using SearchableGeometries
 using Documenter
 
-DocMeta.setdocmeta!(SearchableGeometries, :DocTestSetup, :(using SearchableGeometries); recursive=true)
+DocMeta.setdocmeta!(
+    SearchableGeometries,
+    :DocTestSetup,
+    :(using SearchableGeometries);
+    recursive=true
+)
 
-makedocs(;
+makedocs(
     modules=[SearchableGeometries],
     authors="Christina Taylor <cgtaylor@boisestate.edu>, Emmanuel Kwame Ayanful <emmanuelayanful@u.boisestate.edu>",
     sitename="SearchableGeometries.jl",
@@ -14,6 +19,7 @@ makedocs(;
     ),
     pages=[
         "Home" => "index.md",
+        "API Reference" => "api.md",
     ],
 )
 
