@@ -18,6 +18,12 @@ import Base.getindex
 
 const DEFAULT_BV_POINT_TOL = 1e-15
 
+"""
+SearchableGeometry
+
+Abstract supertype for searchable geometric objects supported by 'SearchableGeometries.jl'.
+Concreate subtypes currently include ['BoundingVolume'](@ref BoundingVolume), and ['Ball'](@ref Ball).
+"""
 abstract type SearchableGeometry end
 
 # Bounding Volumes ----------------------------------------------------------------------
@@ -180,6 +186,32 @@ end
 
 # Balls ---------------------------------------------------------------------------------
 
+"""
+Ball(center, radius; p=2, active_indices=true, indices)
+
+Construct a ball with center `center` and radius `radius`.
+
+# Arguments
+- `center::Vector{<:Real}`: Center of the ball.
+- `radius::Real`: Radius of the ball.
+- `p::Real`: p-norm.
+- `active_indices::Bool`: Whether to use active indices.
+- `indices::Vector{Int}`: Indices of the active dimensions.
+
+# Returns
+- `Ball`: The constructed ball.
+
+# Throws
+- `ArgumentError`: If `radius` is negative.
+- `ArgumentError`: If `p` is not a positive real number.
+
+# Examples
+```julia
+using SearchableGeometries
+
+ball = Ball([0, 0], 1)
+```
+"""
 struct Ball <: SearchableGeometry
     center::Vector                      # center of the ball
     radius::Real                        # radius of the ball
