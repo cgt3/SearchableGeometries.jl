@@ -18,7 +18,8 @@ makedocs(
         assets=String[],
     ),
     pages=[
-        "Home" => "index.md"
+        "SearchableGeometries Documentation" => "index.md",
+        "API" => "api.md"
     ],
 )
 

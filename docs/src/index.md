@@ -39,10 +39,3 @@ println(intersects(bv, bv2))
 intersection = getIntersection(bv, bv2)
 println(intersection)
 ```
-
-## API
-
-```@autodocs
-Modules = [SearchableGeometries]
-Order = [:type, :function]
-```
