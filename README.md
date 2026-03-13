@@ -4,6 +4,8 @@
 [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://cgt3.github.io/SearchableGeometries.jl/dev/)
 [![Build Status](https://github.com/cgt3/SearchableGeometries.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/cgt3/SearchableGeometries.jl/actions/workflows/CI.yml?query=branch%3Amain)
 [![Coverage](https://codecov.io/gh/cgt3/SearchableGeometries.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/cgt3/SearchableGeometries.jl)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://github.com/cgt3/SearchableGeometries.jl/blob/main/LICENSE)
+[![Downloads](https://img.shields.io/badge/dynamic/json?url=http%3A%2F%2Fjuliapkgstats.com%2Fapi%2Fv1%2Fmonthly_downloads%2FSearchableGeometries&query=total_requests&suffix=%2Fmonth&label=Downloads)](http://juliapkgstats.com/pkg/SearchableGeometries)
 
 A Julia package for defining and querying geometric primitives, specifically designed for efficient spatial indexing and searching operations.
 
