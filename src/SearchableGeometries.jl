@@ -21,6 +21,30 @@ const DEFAULT_BV_POINT_TOL = 1e-15
 abstract type SearchableGeometry end
 
 # Bounding Volumes ----------------------------------------------------------------------
+"""
+BoundingVolume(lb, ub; tol=DEFAULT_BV_POINT_TOL)
+
+Construct a bounding volume with lower bounds `lb` and upper bounds `ub`.
+
+# Arguments
+- `lb::Vector{<:Real}`: Lower bounds of the bounding volume.
+- `ub::Vector{<:Real}`: Upper bounds of the bounding volume.
+- `tol::Real`: Tolerance for determining active dimensions.
+
+# Returns
+- `BoundingVolume`: The constructed bounding volume.
+
+# Throws
+- `ArgumentError`: If `lb` and `ub` have different dimensions.
+- `ArgumentError`: If `lb` > `ub`.
+
+# Examples
+```julia
+using SearchableGeometries
+
+bv = BoundingVolume([0, 0], [1, 1])
+```
+"""
 
 struct BoundingVolume <: SearchableGeometry
     lb::Vector                  # lower bounds
