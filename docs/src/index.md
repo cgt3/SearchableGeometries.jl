@@ -40,8 +40,9 @@ intersection = getIntersection(bv, bv2)
 println(intersection)
 ```
 
-## Contents
-```@contents
-Pages = ["index.md", "api.md"]
-Depth = 2
+## API
+
+```@autodocs
+Modules = [SearchableGeometries]
+Order = [:type, :function]
 ```
