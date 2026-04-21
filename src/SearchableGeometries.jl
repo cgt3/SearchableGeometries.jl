@@ -473,13 +473,54 @@ function Base.:(==)(hp1::Hyperplane, hp2::Hyperplane; tol=DEFAULT_BV_POINT_TOL::
            all(hp1.is_active .== hp2.is_active)
 end
 
-
 function isContained(plane::Hyperplane, query_pt::Vector{<:Real}; tol=DEFAULT_BV_POINT_TOL::Real)
     if length(query_pt) != plane.embedding_dim
         throw("SearchableGeometries.Hyperplane: point dimension($(length(query_pt))) does not match hyperplane embedding dimension($(plane.embedding_dim))")
     end
 
     return abs(dot(plane.n, query_pt - plane.point)) <= tol
+end
+
+function intersects(bv::BoundingVolume, query_plane::Hyperplane; include_boundary=true::Bool, tol=DEFAULT_BV_POINT_TOL::Real)
+    # If the bounding volume is empty, it cannot intersect with anything
+    if bv.is_empty
+        return false
+    end
+
+    # The dimension of the bounding volume and the hyperplane must match
+    if length(bv.lb) != query_plane.embedding_dim
+        throw("SearchableGeometries.Hyperplane: bounding volume dimension($(length(bv.lb))) does not match hyperplane embedding dimension($(query_plane.embedding_dim))")
+    end
+
+    # We study the signed offset function
+    #     h(x) = dot(n, x - point)
+    # over the whole BV. Since h is linear, its minimum and maximum
+    # occur at corners of the box.
+    T = promote_type(eltype(bv.lb), eltype(query_plane.point), eltype(query_plane.n), typeof(tol))
+    min_offset = zero(T)
+    max_offset = zero(T)
+
+
+    for d in eachindex(bv.lb)
+        nd = query_plane.n[d]
+
+        if nd > 0
+            min_offset += nd * (bv.lb[d] - query_plane.point[d])
+            max_offset += nd * (bv.ub[d] - query_plane.point[d])
+        elseif nd < 0
+            min_offset += nd * (bv.ub[d] - query_plane.point[d])
+            max_offset += nd * (bv.lb[d] - query_plane.point[d])
+        end
+        # If nd == 0, this coordinate does not affect the signed offset
+    end
+
+    if include_boundary
+        # The hyperplane intersects the bounding volume if 0 lies in [min_offset, max_offset]
+        return !(min_offset > tol || max_offset < -tol)
+    else
+        # The hyperplane intersects the bounding volume if 0 lies in (min_offset, max_offset)
+        return min_offset < -tol && max_offset > tol
+    end
 end
 
 end # module SearchableGeometries

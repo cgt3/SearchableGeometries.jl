@@ -107,3 +107,51 @@ end
     query_pt3 = [10.0, 2.5, -7.0]
     @test !isContained(plane, query_pt3)
 end
+
+# `intersects(bv, plane)` --------------------------------------------------------
+@testset "intersects(bv, plane): Dimension mismatch throws" begin
+    bv = BoundingVolume([0.0, 0.0], [1.0, 1.0])
+    plane = Hyperplane([0.0, 0.0, 0.0], [1.0, 0.0, 0.0])
+
+    @test_throws "SearchableGeometries.Hyperplane: bounding volume dimension(2) does not match hyperplane embedding dimension(3)" intersects(bv, plane)
+end
+
+@testset "intersects(bv, plane): Plane crosses the interior of a full-dimensional BV" begin
+    bv = BoundingVolume([0.0, 0.0], [1.0, 1.0])
+    plane = Hyperplane([0.0, 1.0], [1.0, 1.0])  # x + y = 1
+
+    @test intersects(bv, plane; include_boundary=true)
+    @test intersects(bv, plane; include_boundary=false)
+end
+
+@testset "intersects(bv, plane): Plane touching only a boundary face" begin
+    bv = BoundingVolume([0.0, 0.0], [1.0, 1.0])
+    plane = Hyperplane([0.0, 0.0], [1.0, 0.0])  # x = 0
+
+    @test intersects(bv, plane; include_boundary=true)
+    @test !intersects(bv, plane; include_boundary=false)
+end
+
+@testset "intersects(bv, plane): Plane touching only at a corner" begin
+    bv = BoundingVolume([0.0, 0.0], [1.0, 1.0])
+    plane = Hyperplane([0.0, 0.0], [1.0, 1.0])  # x + y = 0
+
+    @test intersects(bv, plane; include_boundary=true)
+    @test !intersects(bv, plane; include_boundary=false)
+end
+
+@testset "intersects(bv, plane): Plane completely outside the BV" begin
+    bv = BoundingVolume([0.0, 0.0], [1.0, 1.0])
+    plane = Hyperplane([2.0, 0.0], [1.0, 0.0])  # x = 2
+
+    @test !intersects(bv, plane; include_boundary=true)
+    @test !intersects(bv, plane; include_boundary=false)
+end
+
+@testset "intersects(bv, plane): Lower-dimensional BV lying on the plane" begin
+    bv = BoundingVolume([0.0, -1.0], [0.0, 1.0])  # segment x = 0
+    plane = Hyperplane([0.0, 0.0], [1.0, 0.0])    # plane x = 0
+
+    @test intersects(bv, plane; include_boundary=true)
+    @test !intersects(bv, plane; include_boundary=false)
+end
