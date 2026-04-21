@@ -366,3 +366,146 @@ end
     @test !intersects(bv, ball_p2; include_boundary=false)
     @test !intersects(bv, ball_pInf; include_boundary=false)
 end
+
+# `getReducedDimBall` --------------------------------------------------
+@testset "getReducedDimBall(ball): Non-intersecting plane" begin
+    ball_p1 = Ball([0.0, 0.0, 0.0], 2.0, p=1)
+    ball_p2 = Ball([0.0, 0.0, 0.0], 2.0, p=2)
+    ball_pInf = Ball([0.0, 0.0, 0.0], 2.0, p=Inf)
+
+    @test_throws "does not intersect the ball" getReducedDimBall(2, 3.0, ball_p1)
+    @test_throws "does not intersect the ball" getReducedDimBall(2, 3.0, ball_p2)
+    @test_throws "does not intersect the ball" getReducedDimBall(2, 3.0, ball_pInf)
+end
+
+@testset "getReducedDimBall(ball): Central slice of a full-dimension ball" begin
+    ball_p1 = Ball([0.0, 0.0, 0.0], 2.0, p=1)
+    ball_p2 = Ball([0.0, 0.0, 0.0], 2.0, p=2)
+    ball_pInf = Ball([0.0, 0.0, 0.0], 2.0, p=Inf)
+
+    reduced_ball_p1 = getReducedDimBall(2, 0.0, ball_p1)
+    @test reduced_ball_p1.center == [0.0, 0.0, 0.0]
+    @test reduced_ball_p1.radius == 2.0
+    @test all(reduced_ball_p1.active_dim .== [1, 3])
+    @test all(reduced_ball_p1.inactive_dim .== [2])
+    @test all(reduced_ball_p1.is_active .== [true, false, true])
+    @test reduced_ball_p1.p == 1
+    @test reduced_ball_p1.dim == 2
+
+    reduced_ball_p2 = getReducedDimBall(2, 0.0, ball_p2)
+    @test reduced_ball_p2.center == [0.0, 0.0, 0.0]
+    @test reduced_ball_p2.radius == 2.0
+    @test all(reduced_ball_p2.active_dim .== [1, 3])
+    @test all(reduced_ball_p2.inactive_dim .== [2])
+    @test all(reduced_ball_p2.is_active .== [true, false, true])
+    @test reduced_ball_p2.p == 2
+    @test reduced_ball_p2.dim == 2
+
+    reduced_ball_pInf = getReducedDimBall(2, 0.0, ball_pInf)
+    @test reduced_ball_pInf.center == [0.0, 0.0, 0.0]
+    @test reduced_ball_pInf.radius == 2.0
+    @test all(reduced_ball_pInf.active_dim .== [1, 3])
+    @test all(reduced_ball_pInf.inactive_dim .== [2])
+    @test all(reduced_ball_pInf.is_active .== [true, false, true])
+    @test reduced_ball_pInf.p == Inf
+    @test reduced_ball_pInf.dim == 2
+end
+
+@testset "getReducedDimBall(ball): Off-center slice of a full-dimension ball" begin
+    ball_p1 = Ball([0.0, 0.0, 0.0], 2.0, p=1)
+    ball_p2 = Ball([0.0, 0.0, 0.0], 2.0, p=2)
+    ball_pInf = Ball([0.0, 0.0, 0.0], 2.0, p=Inf)
+
+    reduced_ball_p1 = getReducedDimBall(2, 1.0, ball_p1)
+    @test reduced_ball_p1.center == [0.0, 1.0, 0.0]
+    @test reduced_ball_p1.radius == 1.0
+    @test all(reduced_ball_p1.active_dim .== [1, 3])
+    @test all(reduced_ball_p1.inactive_dim .== [2])
+    @test all(reduced_ball_p1.is_active .== [true, false, true])
+    @test reduced_ball_p1.p == 1
+    @test reduced_ball_p1.dim == 2
+
+    reduced_ball_p2 = getReducedDimBall(2, 1.0, ball_p2)
+    @test reduced_ball_p2.center == [0.0, 1.0, 0.0]
+    @test isapprox(reduced_ball_p2.radius, sqrt(3.0))
+    @test all(reduced_ball_p2.active_dim .== [1, 3])
+    @test all(reduced_ball_p2.inactive_dim .== [2])
+    @test all(reduced_ball_p2.is_active .== [true, false, true])
+    @test reduced_ball_p2.p == 2
+    @test reduced_ball_p2.dim == 2
+
+    reduced_ball_pInf = getReducedDimBall(2, 1.0, ball_pInf)
+    @test reduced_ball_pInf.center == [0.0, 1.0, 0.0]
+    @test reduced_ball_pInf.radius == 2.0
+    @test all(reduced_ball_pInf.active_dim .== [1, 3])
+    @test all(reduced_ball_pInf.inactive_dim .== [2])
+    @test all(reduced_ball_pInf.is_active .== [true, false, true])
+    @test reduced_ball_pInf.p == Inf
+    @test reduced_ball_pInf.dim == 2
+end
+
+@testset "getReducedDimBall(ball): Boundary slice of a full-dimension ball for finite p" begin
+    ball_p1 = Ball([0.0, 0.0], 2.0, p=1)
+    ball_p2 = Ball([0.0, 0.0], 2.0, p=2)
+    ball_pInf = Ball([0.0, 0.0], 2.0, p=Inf)
+
+    reduced_ball_p1 = getReducedDimBall(1, 2.0, ball_p1)
+    @test reduced_ball_p1.center == [2.0, 0.0]
+    @test reduced_ball_p1.radius == 0.0
+    @test all(reduced_ball_p1.active_dim .== [])
+    @test all(reduced_ball_p1.inactive_dim .== [1, 2])
+    @test all(reduced_ball_p1.is_active .== [false, false])
+    @test reduced_ball_p1.p == 1
+    @test reduced_ball_p1.dim == 0
+
+    reduced_ball_p2 = getReducedDimBall(1, 2.0, ball_p2)
+    @test reduced_ball_p2.center == [2.0, 0.0]
+    @test reduced_ball_p2.radius == 0.0
+    @test all(reduced_ball_p2.active_dim .== [])
+    @test all(reduced_ball_p2.inactive_dim .== [1, 2])
+    @test all(reduced_ball_p2.is_active .== [false, false])
+    @test reduced_ball_p2.p == 2
+    @test reduced_ball_p2.dim == 0
+
+    reduced_ball_pInf = getReducedDimBall(1, 2.0, ball_pInf)
+    @test reduced_ball_pInf.center == [2.0, 0.0]
+    @test reduced_ball_pInf.radius == 2.0
+    @test all(reduced_ball_pInf.active_dim .== [2])
+    @test all(reduced_ball_pInf.inactive_dim .== [1])
+    @test all(reduced_ball_pInf.is_active .== [false, true])
+    @test reduced_ball_pInf.p == Inf
+    @test reduced_ball_pInf.dim == 1
+end
+
+@testset "getReducedDimBall(ball): Slice of an already low-dimensional ball" begin
+    ball_p1 = Ball([0.0, 0.0, 0.0], 2.0, p=1, active_indices=true, indices=[1, 3])
+    ball_p2 = Ball([0.0, 0.0, 0.0], 2.0, p=2, active_indices=true, indices=[1, 3])
+    ball_pInf = Ball([0.0, 0.0, 0.0], 2.0, p=Inf, active_indices=true, indices=[1, 3])
+
+    reduced_ball_p1 = getReducedDimBall(3, 1.0, ball_p1)
+    @test reduced_ball_p1.center == [0.0, 0.0, 1.0]
+    @test reduced_ball_p1.radius == 1.0
+    @test all(reduced_ball_p1.active_dim .== [1])
+    @test all(reduced_ball_p1.inactive_dim .== [2, 3])
+    @test all(reduced_ball_p1.is_active .== [true, false, false])
+    @test reduced_ball_p1.p == 1
+    @test reduced_ball_p1.dim == 1
+
+    reduced_ball_p2 = getReducedDimBall(3, 1.0, ball_p2)
+    @test reduced_ball_p2.center == [0.0, 0.0, 1.0]
+    @test isapprox(reduced_ball_p2.radius, sqrt(3.0))
+    @test all(reduced_ball_p2.active_dim .== [1])
+    @test all(reduced_ball_p2.inactive_dim .== [2, 3])
+    @test all(reduced_ball_p2.is_active .== [true, false, false])
+    @test reduced_ball_p2.p == 2
+    @test reduced_ball_p2.dim == 1
+
+    reduced_ball_pInf = getReducedDimBall(3, 1.0, ball_pInf)
+    @test reduced_ball_pInf.center == [0.0, 0.0, 1.0]
+    @test reduced_ball_pInf.radius == 2.0
+    @test all(reduced_ball_pInf.active_dim .== [1])
+    @test all(reduced_ball_pInf.inactive_dim .== [2, 3])
+    @test all(reduced_ball_pInf.is_active .== [true, false, false])
+    @test reduced_ball_pInf.p == Inf
+    @test reduced_ball_pInf.dim == 1
+end

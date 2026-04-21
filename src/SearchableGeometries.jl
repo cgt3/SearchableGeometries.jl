@@ -318,4 +318,18 @@ function intersects(bv::BoundingVolume, ball::Ball; include_boundary=true::Bool,
     return isContained(ball, closest_pt; include_boundary=include_boundary)
 end
 
+function getReducedDimBall(removal_dim::Integer, x_d::Real, ball::Ball)
+    if x_d < ball.center[removal_dim] - ball.radius || ball.center[removal_dim] + ball.radius < x_d
+        throw("SearchableGeometries.Ball: coordinate plane defined by x_$removal_dim = $x_d does not intersect the ball (center=$(ball.center), radius=$(ball.radius))")
+    end
+
+    new_center = copy(ball.center)
+    new_center[removal_dim] = x_d
+
+    new_radius = ball.p === Inf ? ball.radius : (ball.radius^ball.p - abs(x_d - ball.center[removal_dim])^ball.p)^(1 / ball.p)
+    inactive_dim = [ball.inactive_dim..., removal_dim]
+
+    return Ball(new_center, new_radius; p=ball.p, active_indices=false, indices=inactive_dim)
+end
+
 end
