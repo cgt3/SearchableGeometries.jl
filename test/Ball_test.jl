@@ -653,3 +653,90 @@ end
     @test sort(unique(altered_lb_indices_pInf)) == [1, 2]
     @test altered_ub_indices_pInf == []
 end
+
+# `getIntersection(bv, ball)` --------------------------------------------------
+@testset "getIntersection(bv, ball): No intersection returns an empty BoundingVolume" begin
+    bv_p1 = BoundingVolume([0.0, 0.0], [1.0, 1.0])
+    bv_p2 = BoundingVolume([0.0, 0.0], [1.0, 1.0])
+    bv_pInf = BoundingVolume([0.0, 0.0], [1.0, 1.0])
+
+    ball_p1 = Ball([3.0, 3.0], 1.0, p=1)
+    ball_p2 = Ball([3.0, 3.0], 1.0, p=2)
+    ball_pInf = Ball([3.0, 3.0], 1.0, p=Inf)
+
+    intersection_p1 = getIntersection(bv_p1, ball_p1)
+    @test intersection_p1 == BoundingVolume()
+
+    intersection_p2 = getIntersection(bv_p2, ball_p2)
+    @test intersection_p2 == BoundingVolume()
+
+    intersection_pInf = getIntersection(bv_pInf, ball_pInf)
+    @test intersection_pInf == BoundingVolume()
+end
+
+@testset "getIntersection(bv, ball): BV completely contained in the ball returns the BV unchanged" begin
+    bv_p1 = BoundingVolume([-1.0, -1.0], [1.0, 1.0])
+    bv_p2 = BoundingVolume([-1.0, -1.0], [1.0, 1.0])
+    bv_pInf = BoundingVolume([-1.0, -1.0], [1.0, 1.0])
+
+    ball_p1 = Ball([0.0, 0.0], 3.0, p=1)
+    ball_p2 = Ball([0.0, 0.0], 3.0, p=2)
+    ball_pInf = Ball([0.0, 0.0], 3.0, p=Inf)
+
+    expected_bv = BoundingVolume([-1.0, -1.0], [1.0, 1.0])
+
+    intersection_p1 = getIntersection(bv_p1, ball_p1)
+    @test intersection_p1 == expected_bv
+
+    intersection_p2 = getIntersection(bv_p2, ball_p2)
+    @test intersection_p2 == expected_bv
+
+    intersection_pInf = getIntersection(bv_pInf, ball_pInf)
+    @test intersection_pInf == expected_bv
+end
+
+@testset "getIntersection(bv, ball): Ball completely inside the BV returns the ball's bounding box" begin
+    bv_p1 = BoundingVolume([-3.0, -3.0], [4.0, 4.0])
+    bv_p2 = BoundingVolume([-3.0, -3.0], [4.0, 4.0])
+    bv_pInf = BoundingVolume([-3.0, -3.0], [4.0, 4.0])
+
+    ball_p1 = Ball([1.0, 1.0], 1.0, p=1)
+    ball_p2 = Ball([1.0, 1.0], 1.0, p=2)
+    ball_pInf = Ball([1.0, 1.0], 1.0, p=Inf)
+
+    expected_bv = BoundingVolume([0.0, 0.0], [2.0, 2.0])
+
+    intersection_p1 = getIntersection(bv_p1, ball_p1)
+    @test intersection_p1 == expected_bv
+
+    intersection_p2 = getIntersection(bv_p2, ball_p2)
+    @test intersection_p2 == expected_bv
+
+    intersection_pInf = getIntersection(bv_pInf, ball_pInf)
+    @test intersection_pInf == expected_bv
+end
+
+@testset "getIntersection(bv, ball): Partial overlap crops and then tightens the BV" begin
+    bv_p1 = BoundingVolume([0.0, 0.0], [2.0, 2.0])
+    bv_p2 = BoundingVolume([0.0, 0.0], [2.0, 2.0])
+    bv_pInf = BoundingVolume([0.0, 0.0], [2.0, 2.0])
+
+    ball_p1 = Ball([2.5, 2.5], 1.7, p=1)
+    ball_p2 = Ball([2.5, 2.5], 1.7, p=2)
+    ball_pInf = Ball([2.5, 2.5], 1.7, p=Inf)
+
+    intersection_p1 = getIntersection(bv_p1, ball_p1)
+    @test isapprox(intersection_p1.lb[1], 1.3; atol=1e-12)
+    @test isapprox(intersection_p1.lb[2], 1.3; atol=1e-12)
+    @test intersection_p1.ub == [2.0, 2.0]
+
+    intersection_p2 = getIntersection(bv_p2, ball_p2)
+    @test isapprox(intersection_p2.lb[1], 2.5 - sqrt(1.7^2 - 0.5^2); atol=1e-12)
+    @test isapprox(intersection_p2.lb[2], 2.5 - sqrt(1.7^2 - 0.5^2); atol=1e-12)
+    @test intersection_p2.ub == [2.0, 2.0]
+
+    intersection_pInf = getIntersection(bv_pInf, ball_pInf)
+    @test isapprox(intersection_pInf.lb[1], 0.8; atol=1e-12)
+    @test isapprox(intersection_pInf.lb[2], 0.8; atol=1e-12)
+    @test intersection_pInf.ub == [2.0, 2.0]
+end

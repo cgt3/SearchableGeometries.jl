@@ -332,7 +332,7 @@ function getReducedDimBall(removal_dim::Integer, x_d::Real, ball::Ball)
     return Ball(new_center, new_radius; p=ball.p, active_indices=false, indices=inactive_dim)
 end
 
-function tightenBVBounds!(bv::BoundingVolume, ball::Ball; tol=DEFAULT_BV_POINT_TOL)
+function tightenBVBounds!(bv::BoundingVolume, ball::Ball; tol=DEFAULT_BV_POINT_TOL::Real)
     if ball.dim == 1
         d = ball.active_dim[1]
         lb_ball = ball.center[d] - ball.radius
@@ -416,4 +416,23 @@ function tightenBVBounds!(bv::BoundingVolume, ball::Ball; tol=DEFAULT_BV_POINT_T
     return altered_lb_indices, altered_ub_indices
 end
 
+function getIntersection(bv::BoundingVolume, ball::Ball; tol=DEFAULT_BV_POINT_TOL::Real)
+    if !intersects(bv, ball; include_boundary=true, tol=tol)
+        return BoundingVolume()
+    end
+
+    bv_ball = BoundingVolume(ball; tol=tol)
+    cropped_bv = getIntersection(bv, bv_ball, tol=tol)
+
+    # Check if the ball's center is in the BV or the BV is completely contained in the ball
+    if isContained(ball, cropped_bv)
+        return cropped_bv
+    end
+
+    # The ball's center is not contained in the BV, so it
+    # may be possible to crop the BV further
+    tightenBVBounds!(cropped_bv, ball, tol=tol)
+    return cropped_bv
 end
+
+end # module SearchableGeometries
