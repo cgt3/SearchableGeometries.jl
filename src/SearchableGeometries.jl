@@ -3,7 +3,7 @@ module SearchableGeometries
 using LinearAlgebra
 
 # Data Types:
-export SearchableGeometry, Ball, BoundingVolume
+export SearchableGeometry, Ball, BoundingVolume, Hyperplane
 
 # BV only Functions:
 export getClosestPoint, getFurthestPoint, faceIndex2SpatialIndex, getFaceBoundingVolume
@@ -13,6 +13,8 @@ export isContained, intersects, getIntersection
 
 # Ball only Functions:
 export getReducedDimBall, tightenBVBounds!
+
+# Hyperplane only Functions:
 
 import Base.getindex
 
@@ -433,6 +435,51 @@ function getIntersection(bv::BoundingVolume, ball::Ball; tol=DEFAULT_BV_POINT_TO
     # may be possible to crop the BV further
     tightenBVBounds!(cropped_bv, ball, tol=tol)
     return cropped_bv
+end
+
+# Hyperplanes ----------------------------------------------------------------------
+struct Hyperplane <: SearchableGeometry
+    point::Vector
+    n::Vector
+    dim::Integer
+    embedding_dim::Integer
+    active_dim::Vector
+    inactive_dim::Vector
+    is_active::Vector{Bool}
+
+    function Hyperplane(point::Vector, n::Vector)
+        if length(point) != length(n)
+            throw("SearchableGeometries.Hyperplane: point and normal vector must have the same dimension")
+        end
+
+        if iszero(norm(n))
+            throw("SearchableGeometries.Hyperplane: normal vector must be nonzero")
+        end
+
+        all_indices = [eachindex(point)...]
+        is_active = n .!= 0
+        return new(point, n ./ norm(n), sum(is_active), length(point), all_indices[is_active], all_indices[.!is_active], is_active)
+    end
+end
+
+import Base.==
+function Base.:(==)(hp1::Hyperplane, hp2::Hyperplane; tol=DEFAULT_BV_POINT_TOL::Real)
+    return all(hp1.point .== hp2.point) &&
+           all(hp1.n .== hp2.n) &&
+           hp1.dim == hp2.dim &&
+           hp1.embedding_dim == hp2.embedding_dim &&
+           all(hp1.active_dim .== hp2.active_dim) &&
+           all(hp1.inactive_dim .== hp2.inactive_dim) &&
+           all(hp1.is_active .== hp2.is_active)
+end
+
+
+function isContained(plane::Hyperplane, query_pt::Vector{<:Real}; tol=DEFAULT_BV_POINT_TOL::Real)
+    if length(query_pt) != plane.embedding_dim
+        throw("SearchableGeometries.Hyperplane: point dimension($(length(query_pt))) does not match hyperplane embedding dimension($(plane.embedding_dim))")
+    end
+
+    return abs(dot(plane.n, query_pt - plane.point)) <= tol
 end
 
 end # module SearchableGeometries

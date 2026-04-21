@@ -28,7 +28,7 @@ end
     @test bv.is_empty == false
     @test bv.lb == bv.ub
     @test bv.dim == 0
-    @test bv.active_dim == [ ]
+    @test bv.active_dim == []
     @test bv.inactive_dim == [1, 2, 3]
     @test bv.is_active == [false, false, false]
 end
@@ -58,14 +58,14 @@ end
 @testset "getClosestPoint(BV, pt): Interior Point (pt in BV)" begin
     bv = BoundingVolume([0, 0], [1, 1])
     pt = [0.5, 0.5]
-    
+
     @test all(getClosestPoint(bv, pt) .== pt)
 end
 
 @testset "getClosestPoint(BV, pt): Boundary Point (pt on boundary of BV)" begin
     bv = BoundingVolume([0, 0], [1, 1])
     pt = [1, 0.5]
-    
+
     @test all(getClosestPoint(bv, pt) .== pt)
 end
 
@@ -73,7 +73,7 @@ end
     bv = BoundingVolume([0, 0], [1, 1])
     pt1 = [2, 2]
     pt2 = [-1, -0.5]
-    
+
     @test all(getClosestPoint(bv, pt1) .== bv.ub)
     @test all(getClosestPoint(bv, pt2) .== bv.lb)
 end
@@ -83,7 +83,7 @@ end
     bv = BoundingVolume([0, 0], [1, 1])
     pt1 = [0.5, 0.5]
     pt2 = [0.25, 0.25]
-    
+
     @test all(getFurthestPoint(bv, pt1) .== bv.lb) # Note: ties goes to lb
     @test all(getFurthestPoint(bv, pt2) .== bv.ub)
 end
@@ -91,7 +91,7 @@ end
 @testset "getFurthestPoint(BV, pt): Boundary Point (pt on boundary of BV)" begin
     bv = BoundingVolume([0, 0], [1, 1])
     pt = [0.25, 1]
-    
+
     @test all(getFurthestPoint(bv, pt) .== [1, 0])
 end
 
@@ -99,7 +99,7 @@ end
     bv = BoundingVolume([0, 0], [1, 1])
     pt1 = [1.5, 1.5]
     pt2 = [-1, -0.5]
-    
+
     @test all(getFurthestPoint(bv, pt1) .== bv.lb)
     @test all(getFurthestPoint(bv, pt2) .== bv.ub)
 end
@@ -110,13 +110,13 @@ end
     interior_pt = [0.5, 0.5]
     boundary_pt = [1, 0]
     exterior_pt = [2, 2]
-    
+
     @test isContained(bv, interior_pt, include_boundary=true) == true
     @test isContained(bv, interior_pt, include_boundary=false) == true
 
     @test isContained(bv, boundary_pt, include_boundary=true) == true
     @test isContained(bv, boundary_pt, include_boundary=false) == false
-    
+
     @test isContained(bv, exterior_pt, include_boundary=true) == false
     @test isContained(bv, exterior_pt, include_boundary=false) == false
 end
@@ -124,7 +124,7 @@ end
 @testset "isContained(BV, BV): Empty Intersection" begin
     bv = BoundingVolume([0, 0], [1, 1])
     bv_query = BoundingVolume([-2, -2], [-1, -1])
-    
+
     @test isContained(bv, bv_query, include_boundary=true) == false
     @test isContained(bv, bv_query, include_boundary=false) == false
 end
@@ -132,7 +132,7 @@ end
 @testset "isContained(BV, BV): Partial Intersection" begin
     bv = BoundingVolume([0, 0], [1, 1])
     bv_query = BoundingVolume([-1, -1], [0.5, 0.5])
-    
+
     # Full-dim intersection
     @test isContained(bv, bv_query, include_boundary=true) == false
     @test isContained(bv, bv_query, include_boundary=false) == false
@@ -195,7 +195,7 @@ end
 
 @testset "getIntersection(BV, BV): Low-Dim Intersection" begin
     bv = BoundingVolume([0, 0], [1, 1])
-    
+
     bv_pt = BoundingVolume([-1, -1], [0, 0])
     pt_intersection = getIntersection(bv, bv_pt)
     @test pt_intersection.dim == 0
@@ -212,7 +212,7 @@ end
 
 @testset "getIntersection(BV, BV): Full-Dim Intersection" begin
     bv = BoundingVolume([0, 0], [1, 1])
-    
+
     bv_interior = BoundingVolume([0.25, 0.25], [0.75, 0.75])
     interior_intersection = getIntersection(bv, bv_interior)
     @test interior_intersection == bv_interior
@@ -246,12 +246,12 @@ end
 
     bottom = BoundingVolume([0, 0, 0], [1, 1, 0])
     top = BoundingVolume([0, 0, 1], [1, 1, 1])
-    
+
     # Lower bound faces
     @test getFaceBoundingVolume(1, bv) == left
     @test getFaceBoundingVolume(2, bv) == front
     @test getFaceBoundingVolume(3, bv) == bottom
-    
+
     # Upper bound faces
     @test getFaceBoundingVolume(4, bv) == right
     @test getFaceBoundingVolume(5, bv) == back
