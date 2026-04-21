@@ -332,4 +332,88 @@ function getReducedDimBall(removal_dim::Integer, x_d::Real, ball::Ball)
     return Ball(new_center, new_radius; p=ball.p, active_indices=false, indices=inactive_dim)
 end
 
+function tightenBVBounds!(bv::BoundingVolume, ball::Ball; tol=DEFAULT_BV_POINT_TOL)
+    if ball.dim == 1
+        d = ball.active_dim[1]
+        lb_ball = ball.center[d] - ball.radius
+        ub_ball = ball.center[d] + ball.radius
+
+        if bv.lb[d] < lb_ball < bv.ub[d]
+            bv.lb[d] = lb_ball
+            altered_lb_indices = [d]
+        else
+            altered_lb_indices = []
+        end
+
+        if bv.lb[d] < ub_ball < bv.ub[d]
+            bv.ub[d] = ub_ball
+            altered_ub_indices = [d]
+        else
+            altered_ub_indices = []
+        end
+        return altered_lb_indices, altered_ub_indices
+    end
+
+    # For non-simple intersections
+    ub_pt_projected = copy(ball.center)
+    lb_pt_projected = copy(ball.center)
+
+    # For every face with no intersection with the ball, recurse
+    altered_lb_indices = []
+    altered_ub_indices = []
+    num_dim = length(ball.center)
+    for f_target in 1:2*num_dim # for each face
+        face_bv = getFaceBoundingVolume(f_target, bv, tol=tol)
+
+        non_simple = false
+        if !intersects(face_bv, ball, include_boundary=true, tol=tol)
+            adjacent_faces = [1:f_target-1..., f_target+1:2*num_dim...]
+            d_target = faceIndex2SpatialIndex(f_target, num_dim)
+
+            # Check if this face needs to be updated using a non-simple intersection
+            if f_target <= num_dim # f_target is a lb face
+                lb_pt_projected[d_target] = face_bv.lb[d_target]
+                if isContained(face_bv, lb_pt_projected, include_boundary=true)
+                    push!(altered_lb_indices, d_target)
+                    bv.lb[d_target] = ball.center[d_target] - ball.radius
+                    non_simple = true
+                end
+                lb_pt_projected[d_target] = ball.center[d_target]
+            else # f_target is an ub face
+                ub_pt_projected[d_target] = face_bv.ub[d_target]
+                if isContained(face_bv, ub_pt_projected, include_boundary=true)
+                    push!(altered_ub_indices, d_target)
+                    bv.ub[d_target] = ball.center[d_target] + ball.radius
+                    non_simple = true
+                end
+                ub_pt_projected[d_target] = ball.center[d_target]
+            end
+
+            # For simple intersections
+            if !non_simple
+                for f_adjacent in adjacent_faces
+                    adjacent_face_bv = getFaceBoundingVolume(f_adjacent, bv, tol=tol)
+
+                    if intersects(adjacent_face_bv, ball, include_boundary=true)
+                        d_fixed = faceIndex2SpatialIndex(f_adjacent, num_dim)
+                        reduced_ball = getReducedDimBall(d_fixed, adjacent_face_bv.lb[d_fixed], ball)
+
+                        # This will modify face_adjacent's bounds 
+                        altered_lb_indices_new, altered_ub_indices_new = tightenBVBounds!(adjacent_face_bv, reduced_ball, tol=tol)
+
+                        # Update the higher-dim BV with the new bounds on face_adjacent
+                        bv.lb[altered_lb_indices_new] .= adjacent_face_bv.lb[altered_lb_indices_new]
+                        bv.ub[altered_ub_indices_new] .= adjacent_face_bv.ub[altered_ub_indices_new]
+
+                        altered_lb_indices = vcat(altered_lb_indices, altered_lb_indices_new)
+                        altered_ub_indices = vcat(altered_ub_indices, altered_ub_indices_new)
+                    end
+                end # for
+            end # if simple
+        end
+    end
+
+    return altered_lb_indices, altered_ub_indices
+end
+
 end

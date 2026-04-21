@@ -509,3 +509,147 @@ end
     @test reduced_ball_pInf.p == Inf
     @test reduced_ball_pInf.dim == 1
 end
+
+# `tightenBVBounds!` --------------------------------------------------
+@testset "tightenBVBounds!(bv, ball): 1D ball uses the correct active dimension" begin
+    bv_p1 = BoundingVolume([-5.0, -2.0, -5.0], [5.0, 5.0, 5.0])
+    bv_p2 = BoundingVolume([-5.0, -2.0, -5.0], [5.0, 5.0, 5.0])
+    bv_pInf = BoundingVolume([-5.0, -2.0, -5.0], [5.0, 5.0, 5.0])
+
+    ball_p1 = Ball([0.0, 2.0, 0.0], 1.0, p=1, active_indices=true, indices=[2])
+    ball_p2 = Ball([0.0, 2.0, 0.0], 1.0, p=2, active_indices=true, indices=[2])
+    ball_pInf = Ball([0.0, 2.0, 0.0], 1.0, p=Inf, active_indices=true, indices=[2])
+
+    altered_lb_indices_p1, altered_ub_indices_p1 = tightenBVBounds!(bv_p1, ball_p1)
+    @test bv_p1.lb == [-5.0, 1.0, -5.0]
+    @test bv_p1.ub == [5.0, 3.0, 5.0]
+    @test altered_lb_indices_p1 == [2]
+    @test altered_ub_indices_p1 == [2]
+
+    altered_lb_indices_p2, altered_ub_indices_p2 = tightenBVBounds!(bv_p2, ball_p2)
+    @test bv_p2.lb == [-5.0, 1.0, -5.0]
+    @test bv_p2.ub == [5.0, 3.0, 5.0]
+    @test altered_lb_indices_p2 == [2]
+    @test altered_ub_indices_p2 == [2]
+
+    altered_lb_indices_pInf, altered_ub_indices_pInf = tightenBVBounds!(bv_pInf, ball_pInf)
+    @test bv_pInf.lb == [-5.0, 1.0, -5.0]
+    @test bv_pInf.ub == [5.0, 3.0, 5.0]
+    @test altered_lb_indices_pInf == [2]
+    @test altered_ub_indices_pInf == [2]
+end
+
+@testset "tightenBVBounds!(bv, ball): 1D ball tightens only one side when the other is already on the boundary" begin
+    bv_p1 = BoundingVolume([-2.0, -5.0], [2.0, 5.0])
+    bv_p2 = BoundingVolume([-2.0, -5.0], [2.0, 5.0])
+    bv_pInf = BoundingVolume([-2.0, -5.0], [2.0, 5.0])
+
+    ball_p1 = Ball([-1.0, 0.0], 1.0, p=1, active_indices=true, indices=[1])
+    ball_p2 = Ball([-1.0, 0.0], 1.0, p=2, active_indices=true, indices=[1])
+    ball_pInf = Ball([-1.0, 0.0], 1.0, p=Inf, active_indices=true, indices=[1])
+
+    altered_lb_indices_p1, altered_ub_indices_p1 = tightenBVBounds!(bv_p1, ball_p1)
+    @test bv_p1.lb == [-2.0, -5.0]
+    @test bv_p1.ub == [0.0, 5.0]
+    @test altered_lb_indices_p1 == []
+    @test altered_ub_indices_p1 == [1]
+
+    altered_lb_indices_p2, altered_ub_indices_p2 = tightenBVBounds!(bv_p2, ball_p2)
+    @test bv_p2.lb == [-2.0, -5.0]
+    @test bv_p2.ub == [0.0, 5.0]
+    @test altered_lb_indices_p2 == []
+    @test altered_ub_indices_p2 == [1]
+
+    altered_lb_indices_pInf, altered_ub_indices_pInf = tightenBVBounds!(bv_pInf, ball_pInf)
+    @test bv_pInf.lb == [-2.0, -5.0]
+    @test bv_pInf.ub == [0.0, 5.0]
+    @test altered_lb_indices_pInf == []
+    @test altered_ub_indices_pInf == [1]
+end
+
+@testset "tightenBVBounds!(bv, ball): 1D ball does not update when the ball interval already matches the BV bounds" begin
+    bv_p1 = BoundingVolume([1.0, -5.0], [3.0, 5.0])
+    bv_p2 = BoundingVolume([1.0, -5.0], [3.0, 5.0])
+    bv_pInf = BoundingVolume([1.0, -5.0], [3.0, 5.0])
+
+    ball_p1 = Ball([2.0, 0.0], 1.0, p=1, active_indices=true, indices=[1])
+    ball_p2 = Ball([2.0, 0.0], 1.0, p=2, active_indices=true, indices=[1])
+    ball_pInf = Ball([2.0, 0.0], 1.0, p=Inf, active_indices=true, indices=[1])
+
+    altered_lb_indices_p1, altered_ub_indices_p1 = tightenBVBounds!(bv_p1, ball_p1)
+    @test bv_p1.lb == [1.0, -5.0]
+    @test bv_p1.ub == [3.0, 5.0]
+    @test altered_lb_indices_p1 == []
+    @test altered_ub_indices_p1 == []
+
+    altered_lb_indices_p2, altered_ub_indices_p2 = tightenBVBounds!(bv_p2, ball_p2)
+    @test bv_p2.lb == [1.0, -5.0]
+    @test bv_p2.ub == [3.0, 5.0]
+    @test altered_lb_indices_p2 == []
+    @test altered_ub_indices_p2 == []
+
+    altered_lb_indices_pInf, altered_ub_indices_pInf = tightenBVBounds!(bv_pInf, ball_pInf)
+    @test bv_pInf.lb == [1.0, -5.0]
+    @test bv_pInf.ub == [3.0, 5.0]
+    @test altered_lb_indices_pInf == []
+    @test altered_ub_indices_pInf == []
+end
+
+@testset "tightenBVBounds!(bv, ball): 2D ball triggers non-simple face updates" begin
+    bv_p1 = BoundingVolume([-3.0, -3.0], [4.0, 4.0])
+    bv_p2 = BoundingVolume([-3.0, -3.0], [4.0, 4.0])
+    bv_pInf = BoundingVolume([-3.0, -3.0], [4.0, 4.0])
+
+    ball_p1 = Ball([1.0, 1.0], 1.0, p=1)
+    ball_p2 = Ball([1.0, 1.0], 1.0, p=2)
+    ball_pInf = Ball([1.0, 1.0], 1.0, p=Inf)
+
+    altered_lb_indices_p1, altered_ub_indices_p1 = tightenBVBounds!(bv_p1, ball_p1)
+    @test bv_p1.lb == [0.0, 0.0]
+    @test bv_p1.ub == [2.0, 2.0]
+    @test sort(unique(altered_lb_indices_p1)) == [1, 2]
+    @test sort(unique(altered_ub_indices_p1)) == [1, 2]
+
+    altered_lb_indices_p2, altered_ub_indices_p2 = tightenBVBounds!(bv_p2, ball_p2)
+    @test bv_p2.lb == [0.0, 0.0]
+    @test bv_p2.ub == [2.0, 2.0]
+    @test sort(unique(altered_lb_indices_p2)) == [1, 2]
+    @test sort(unique(altered_ub_indices_p2)) == [1, 2]
+
+    altered_lb_indices_pInf, altered_ub_indices_pInf = tightenBVBounds!(bv_pInf, ball_pInf)
+    @test bv_pInf.lb == [0.0, 0.0]
+    @test bv_pInf.ub == [2.0, 2.0]
+    @test sort(unique(altered_lb_indices_pInf)) == [1, 2]
+    @test sort(unique(altered_ub_indices_pInf)) == [1, 2]
+end
+
+@testset "tightenBVBounds!(bv, ball): 2D ball triggers recursive simple-intersection updates" begin
+    bv_p1 = BoundingVolume([0.0, 0.0], [2.0, 2.0])
+    bv_p2 = BoundingVolume([0.0, 0.0], [2.0, 2.0])
+    bv_pInf = BoundingVolume([0.0, 0.0], [2.0, 2.0])
+
+    ball_p1 = Ball([2.5, 2.5], 1.7, p=1)
+    ball_p2 = Ball([2.5, 2.5], 1.7, p=2)
+    ball_pInf = Ball([2.5, 2.5], 1.7, p=Inf)
+
+    altered_lb_indices_p1, altered_ub_indices_p1 = tightenBVBounds!(bv_p1, ball_p1)
+    @test isapprox(bv_p1.lb[1], 1.3; atol=1e-12)
+    @test isapprox(bv_p1.lb[2], 1.3; atol=1e-12)
+    @test bv_p1.ub == [2.0, 2.0]
+    @test sort(unique(altered_lb_indices_p1)) == [1, 2]
+    @test altered_ub_indices_p1 == []
+
+    altered_lb_indices_p2, altered_ub_indices_p2 = tightenBVBounds!(bv_p2, ball_p2)
+    @test isapprox(bv_p2.lb[1], 2.5 - sqrt(1.7^2 - 0.5^2); atol=1e-12)
+    @test isapprox(bv_p2.lb[2], 2.5 - sqrt(1.7^2 - 0.5^2); atol=1e-12)
+    @test bv_p2.ub == [2.0, 2.0]
+    @test sort(unique(altered_lb_indices_p2)) == [1, 2]
+    @test altered_ub_indices_p2 == []
+
+    altered_lb_indices_pInf, altered_ub_indices_pInf = tightenBVBounds!(bv_pInf, ball_pInf)
+    @test isapprox(bv_pInf.lb[1], 0.8; atol=1e-12)
+    @test isapprox(bv_pInf.lb[2], 0.8; atol=1e-12)
+    @test bv_pInf.ub == [2.0, 2.0]
+    @test sort(unique(altered_lb_indices_pInf)) == [1, 2]
+    @test altered_ub_indices_pInf == []
+end
