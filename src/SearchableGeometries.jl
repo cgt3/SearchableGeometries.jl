@@ -463,14 +463,14 @@ struct Hyperplane <: SearchableGeometry
 end
 
 import Base.==
-function Base.:(==)(hp1::Hyperplane, hp2::Hyperplane; tol=DEFAULT_BV_POINT_TOL::Real)
-    return all(hp1.point .== hp2.point) &&
-           all(hp1.n .== hp2.n) &&
-           hp1.dim == hp2.dim &&
-           hp1.embedding_dim == hp2.embedding_dim &&
-           all(hp1.active_dim .== hp2.active_dim) &&
-           all(hp1.inactive_dim .== hp2.inactive_dim) &&
-           all(hp1.is_active .== hp2.is_active)
+function Base.:(==)(plane1::Hyperplane, plane2::Hyperplane; tol=DEFAULT_BV_POINT_TOL::Real)
+    return all(plane1.point .== plane2.point) &&
+           all(plane1.n .== plane2.n) &&
+           plane1.dim == plane2.dim &&
+           plane1.embedding_dim == plane2.embedding_dim &&
+           all(plane1.active_dim .== plane2.active_dim) &&
+           all(plane1.inactive_dim .== plane2.inactive_dim) &&
+           all(plane1.is_active .== plane2.is_active)
 end
 
 function isContained(plane::Hyperplane, query_pt::Vector{<:Real}; tol=DEFAULT_BV_POINT_TOL::Real)
@@ -520,6 +520,156 @@ function intersects(bv::BoundingVolume, query_plane::Hyperplane; include_boundar
     else
         # The hyperplane intersects the bounding volume if 0 lies in (min_offset, max_offset)
         return min_offset < -tol && max_offset > tol
+    end
+end
+
+function getClosestPoint(bv::BoundingVolume, query_plane::Hyperplane; tol=DEFAULT_BV_POINT_TOL::Real)
+    # If the bounding volume is empty, it cannot intersect with anything
+    if bv.is_empty
+        return false
+    end
+
+    # The dimension of the bounding volume and the hyperplane must match
+    if length(bv.lb) != query_plane.embedding_dim
+        throw("SearchableGeometries.Hyperplane: bounding volume dimension($(length(bv.lb))) does not match hyperplane embedding dimension($(query_plane.embedding_dim))")
+    end
+
+    T = promote_type(eltype(bv.lb), eltype(query_plane.point), eltype(query_plane.n), typeof(tol))
+    min_offset = zero(T)
+    max_offset = zero(T)
+
+    # Case 1: the BV intersects the plane.
+    #
+    # Then the closest distance is 0, so any point in BV ∩ plane is
+    # a closest point. We construct the lexicographically smallest
+    # feasible point in that intersection.
+    if intersects(bv, query_plane; include_boundary=true, tol=tol)
+        closest_pt = Vector{T}(undef, length(bv.lb))
+
+        # Plane equation: dot(n, x) = c
+        c = dot(query_plane.n, query_plane.point)
+
+        # prefix_sum stores the contribution from coordinates already fixed
+        prefix_sum = zero(T)
+
+        for j in eachindex(bv.lb)
+            nj = query_plane.n[j]
+
+            # Compute the smallest and largest possible contribution
+            # from the remaining coordinates j+1, ..., end
+            rem_min = zero(T)
+            rem_max = zero(T)
+
+            for k in (j+1):length(bv.lb)
+                nk = query_plane.n[k]
+
+                if nk > 0
+                    rem_min += nk * bv.lb[k]
+                    rem_max += nk * bv.ub[k]
+                elseif nk < 0
+                    rem_min += nk * bv.ub[k]
+                    rem_max += nk * bv.lb[k]
+                end
+                # If nk == 0, coordinate k does not affect the plane equation
+            end
+
+            if iszero(nj)
+                # This coordinate does not affect the plane equation.
+                # To get the lexicographically smallest feasible point,
+                # choose the smallest allowed value.
+                closest_pt[j] = bv.lb[j]
+            else
+                # We need
+                #   prefix_sum + nj*x[j] + remaining_contribution = c
+                #
+                # Since remaining_contribution can vary in [rem_min, rem_max],
+                # x[j] must lie in a feasible interval determined by those bounds.
+                rhs_low = c - prefix_sum - rem_max
+                rhs_high = c - prefix_sum - rem_min
+
+                t1 = rhs_low / nj
+                t2 = rhs_high / nj
+
+                feasible_low = max(bv.lb[j], min(t1, t2))
+                feasible_high = min(bv.ub[j], max(t1, t2))
+
+                if feasible_low > feasible_high + tol
+                    throw("SearchableGeometries.Hyperplane: failed to construct a feasible closest point in the BV-plane intersection")
+                end
+
+                # Lexicographically smallest feasible value
+                closest_pt[j] = feasible_low
+            end
+
+            prefix_sum += nj * closest_pt[j]
+        end
+
+        return closest_pt
+    end
+
+    # We study the signed offset function
+    #     h(x) = dot(n, x - point)
+    # over the whole BV. Since h is linear, its minimum and maximum
+    # occur at corners of the box.
+    for d in eachindex(bv.lb)
+        nd = query_plane.n[d]
+
+        if nd > 0
+            min_offset += nd * (bv.lb[d] - query_plane.point[d])
+            max_offset += nd * (bv.ub[d] - query_plane.point[d])
+        elseif nd < 0
+            min_offset += nd * (bv.ub[d] - query_plane.point[d])
+            max_offset += nd * (bv.lb[d] - query_plane.point[d])
+        end
+        # If nd == 0, this coordinate does not affect the signed offset
+    end
+
+    # Case 2: the whole BV is on the positive side of the plane
+    # Then the closest point is any point minimizing h(x).
+    # With our tie-break rule, we return the lexicographically smallest
+    # minimizer.
+    if min_offset > tol
+        closest_pt = Vector{T}(undef, length(bv.lb))
+
+        for d in eachindex(bv.lb)
+            nd = query_plane.n[d]
+
+            if nd > 0
+                closest_pt[d] = bv.lb[d]
+            elseif nd < 0
+                closest_pt[d] = bv.ub[d]
+            else
+                # This coordinate does not matter for distance,
+                # so choose the smallest allowed value
+                closest_pt[d] = bv.lb[d]
+            end
+        end
+
+        return closest_pt
+    end
+
+    # Case 3: the whole BV is on the negative side of the plane
+    # Then the closest point is any point maximizing h(x).
+    # With our tie-break rule, we return the lexicographically smallest
+    # maximizer.
+    if max_offset < -tol
+        closest_pt = Vector{T}(undef, length(bv.lb))
+
+        for d in eachindex(bv.lb)
+            nd = query_plane.n[d]
+
+            if nd > 0
+                closest_pt[d] = bv.ub[d]
+            elseif nd < 0
+                closest_pt[d] = bv.lb[d]
+            else
+                # This coordinate does not matter for distance,
+                # so choose the smallest allowed value
+                closest_pt[d] = bv.lb[d]
+            end
+        end
+
+        return closest_pt
     end
 end
 
