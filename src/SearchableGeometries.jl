@@ -28,6 +28,7 @@ Concreate subtypes currently include `BoundingVolume` and `Ball`.
 """
 abstract type SearchableGeometry end
 
+
 # Bounding Volumes ----------------------------------------------------------------------
 """
 BoundingVolume(lb, ub; tol=DEFAULT_BV_POINT_TOL)
@@ -185,6 +186,7 @@ function getFaceBoundingVolume(face_index::Integer, bv::BoundingVolume; tol=DEFA
 
     return BoundingVolume(face_lb, face_ub; tol=tol)
 end
+
 
 # Balls ---------------------------------------------------------------------------------
 
@@ -437,6 +439,7 @@ function getIntersection(bv::BoundingVolume, ball::Ball; tol=DEFAULT_BV_POINT_TO
     return cropped_bv
 end
 
+
 # Hyperplanes ----------------------------------------------------------------------
 struct Hyperplane <: SearchableGeometry
     point::Vector
@@ -672,5 +675,113 @@ function getClosestPoint(bv::BoundingVolume, query_plane::Hyperplane; tol=DEFAUL
         return closest_pt
     end
 end
+
+function getFurthestPoint(bv::BoundingVolume, query_plane::Hyperplane; tol=DEFAULT_BV_POINT_TOL::Real)
+    # TODO
+end
+
+function getIntersection(bv::BoundingVolume, query_plane::Hyperplane; tol=DEFAULT_BV_POINT_TOL::Real)
+    # TODO
+end
+
+
+# Lines --------------------------------------------------------------------------------
+struct Line
+    dir::Vector
+    source::Vector
+
+    function Line(dir::Vector, source::Vector)
+        if length(dir) != length(source)
+            throw("SearchableGeometries.Line: direction vector and source point dimension must match")
+        end
+
+        return new(dir / norm(dir), source)
+    end
+end
+
+function (::Line)(s::Real)
+    return source + dir * s
+end
+
+# Cones --------------------------------------------------------------------------------
+struct Cone <: SearchableGeometry
+    vertex::Vector
+    axis::Vector
+    slope::Real
+
+    function Cone(vertex::Vector, axis::Vector, slope::Real)
+        if length(vertex) != length(axis)
+            throw("SearchableGeometries.Cone: Vertex and axis vector do not have the same dimensions (dim(vertex)=$(length(vertex)), dim(axis)=$(length(axis))")
+        elseif slope < zero(slope)
+            throw("SearchableGeometries.Cone: Cannot construct cone with negative slope.")
+        end
+
+        return new(vertex, axis ./ norm(axis), slope)
+    end
+end
+
+import Base.==
+function Base.:(==)(cone1::Cone, cone2::Cone; tol=DEFAULT_BV_POINT_TOL::Real)
+    return all(cone1.vertex .== cone2.vertex) &&
+           all(cone1.axis .== cone2.axis) &&
+           cone1.slope == cone2.slope
+end
+
+function getMajorRadius(cone::Cone, p::Vector)
+    return (cone.vertex .- p)' * cone.axis
+end
+
+function getRadii(cone::Cone, p::Vector)
+    dist2Vertex = cone.vertex .- p
+    R = dist2Vertex' * cone.axis
+    r = norm(dist2Vertex .- R * cone.axis)
+    return R, r
+end
+
+# TODO: this functions is not guaranteed to have a unique output; provide a means to break ties
+function getClosestPoint(bv::BoundingVolume, query_line::Line)
+    # TODO: Finish
+end
+
+# TODO: this functions is not guaranteed to have a unique output; provide a means to break ties
+function getClosestPoint(cone::Cone, query_line::Line)
+    # TODO: Finish
+end
+
+# TODO: this functions is not guaranteed to have a unique output; provide a means to break ties
+function getFurthestPoint(cone::Cone, query_line::Line)
+    # TODO: Finish
+end
+
+function getConeBounds(cone::Cone)
+    # TODO: Finish
+end
+
+function getBoundingRadii(cone::Cone, query_bv::BoundingVolume)
+    # TODO: Finish
+end
+
+function BoundingVolume(ub_func, lb_func, s1::Real, s2::Real; tol=DEFAULT_BV_POINT_TOL::Real)
+    lb1 = lb_func(s1)
+    ub1 = ub_func(s1)
+
+    lb2 = lb_func(s2)
+    ub2 = ub_func(s2)
+
+    return BoundingVolume(ub1, lb1, ub2, lb2, tol=tol)
+end
+
+function BoundingVolume(cone::Cone; R_max::Real, R_min::Real=zero(cone.slope), tol=DEFAULT_BV_POINT_TOL::Real)
+    if R_max < R_min
+        throw("SearchableGeometries.BoundingVolume: R_max must be greater than or equal to R_min")
+    end
+
+    if R_min < 0
+        throw("SearchableGeometries.BoundingVolume: R_min and R_max do not satisfy 0 <= R_min <= R_max")
+    end
+
+    return BoundingVolume(cone_ub, cone_lb, R_max, R_min, tol=tol)
+end
+
 
 end # module SearchableGeometries
