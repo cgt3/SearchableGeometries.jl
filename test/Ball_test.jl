@@ -366,3 +366,377 @@ end
     @test !intersects(bv, ball_p2; include_boundary=false)
     @test !intersects(bv, ball_pInf; include_boundary=false)
 end
+
+# `getReducedDimBall` --------------------------------------------------
+@testset "getReducedDimBall(ball): Non-intersecting plane" begin
+    ball_p1 = Ball([0.0, 0.0, 0.0], 2.0, p=1)
+    ball_p2 = Ball([0.0, 0.0, 0.0], 2.0, p=2)
+    ball_pInf = Ball([0.0, 0.0, 0.0], 2.0, p=Inf)
+
+    @test_throws "does not intersect the ball" getReducedDimBall(2, 3.0, ball_p1)
+    @test_throws "does not intersect the ball" getReducedDimBall(2, 3.0, ball_p2)
+    @test_throws "does not intersect the ball" getReducedDimBall(2, 3.0, ball_pInf)
+end
+
+@testset "getReducedDimBall(ball): Central slice of a full-dimension ball" begin
+    ball_p1 = Ball([0.0, 0.0, 0.0], 2.0, p=1)
+    ball_p2 = Ball([0.0, 0.0, 0.0], 2.0, p=2)
+    ball_pInf = Ball([0.0, 0.0, 0.0], 2.0, p=Inf)
+
+    reduced_ball_p1 = getReducedDimBall(2, 0.0, ball_p1)
+    @test reduced_ball_p1.center == [0.0, 0.0, 0.0]
+    @test reduced_ball_p1.radius == 2.0
+    @test all(reduced_ball_p1.active_dim .== [1, 3])
+    @test all(reduced_ball_p1.inactive_dim .== [2])
+    @test all(reduced_ball_p1.is_active .== [true, false, true])
+    @test reduced_ball_p1.p == 1
+    @test reduced_ball_p1.dim == 2
+
+    reduced_ball_p2 = getReducedDimBall(2, 0.0, ball_p2)
+    @test reduced_ball_p2.center == [0.0, 0.0, 0.0]
+    @test reduced_ball_p2.radius == 2.0
+    @test all(reduced_ball_p2.active_dim .== [1, 3])
+    @test all(reduced_ball_p2.inactive_dim .== [2])
+    @test all(reduced_ball_p2.is_active .== [true, false, true])
+    @test reduced_ball_p2.p == 2
+    @test reduced_ball_p2.dim == 2
+
+    reduced_ball_pInf = getReducedDimBall(2, 0.0, ball_pInf)
+    @test reduced_ball_pInf.center == [0.0, 0.0, 0.0]
+    @test reduced_ball_pInf.radius == 2.0
+    @test all(reduced_ball_pInf.active_dim .== [1, 3])
+    @test all(reduced_ball_pInf.inactive_dim .== [2])
+    @test all(reduced_ball_pInf.is_active .== [true, false, true])
+    @test reduced_ball_pInf.p == Inf
+    @test reduced_ball_pInf.dim == 2
+end
+
+@testset "getReducedDimBall(ball): Off-center slice of a full-dimension ball" begin
+    ball_p1 = Ball([0.0, 0.0, 0.0], 2.0, p=1)
+    ball_p2 = Ball([0.0, 0.0, 0.0], 2.0, p=2)
+    ball_pInf = Ball([0.0, 0.0, 0.0], 2.0, p=Inf)
+
+    reduced_ball_p1 = getReducedDimBall(2, 1.0, ball_p1)
+    @test reduced_ball_p1.center == [0.0, 1.0, 0.0]
+    @test reduced_ball_p1.radius == 1.0
+    @test all(reduced_ball_p1.active_dim .== [1, 3])
+    @test all(reduced_ball_p1.inactive_dim .== [2])
+    @test all(reduced_ball_p1.is_active .== [true, false, true])
+    @test reduced_ball_p1.p == 1
+    @test reduced_ball_p1.dim == 2
+
+    reduced_ball_p2 = getReducedDimBall(2, 1.0, ball_p2)
+    @test reduced_ball_p2.center == [0.0, 1.0, 0.0]
+    @test isapprox(reduced_ball_p2.radius, sqrt(3.0))
+    @test all(reduced_ball_p2.active_dim .== [1, 3])
+    @test all(reduced_ball_p2.inactive_dim .== [2])
+    @test all(reduced_ball_p2.is_active .== [true, false, true])
+    @test reduced_ball_p2.p == 2
+    @test reduced_ball_p2.dim == 2
+
+    reduced_ball_pInf = getReducedDimBall(2, 1.0, ball_pInf)
+    @test reduced_ball_pInf.center == [0.0, 1.0, 0.0]
+    @test reduced_ball_pInf.radius == 2.0
+    @test all(reduced_ball_pInf.active_dim .== [1, 3])
+    @test all(reduced_ball_pInf.inactive_dim .== [2])
+    @test all(reduced_ball_pInf.is_active .== [true, false, true])
+    @test reduced_ball_pInf.p == Inf
+    @test reduced_ball_pInf.dim == 2
+end
+
+@testset "getReducedDimBall(ball): Boundary slice of a full-dimension ball for finite p" begin
+    ball_p1 = Ball([0.0, 0.0], 2.0, p=1)
+    ball_p2 = Ball([0.0, 0.0], 2.0, p=2)
+    ball_pInf = Ball([0.0, 0.0], 2.0, p=Inf)
+
+    reduced_ball_p1 = getReducedDimBall(1, 2.0, ball_p1)
+    @test reduced_ball_p1.center == [2.0, 0.0]
+    @test reduced_ball_p1.radius == 0.0
+    @test all(reduced_ball_p1.active_dim .== [])
+    @test all(reduced_ball_p1.inactive_dim .== [1, 2])
+    @test all(reduced_ball_p1.is_active .== [false, false])
+    @test reduced_ball_p1.p == 1
+    @test reduced_ball_p1.dim == 0
+
+    reduced_ball_p2 = getReducedDimBall(1, 2.0, ball_p2)
+    @test reduced_ball_p2.center == [2.0, 0.0]
+    @test reduced_ball_p2.radius == 0.0
+    @test all(reduced_ball_p2.active_dim .== [])
+    @test all(reduced_ball_p2.inactive_dim .== [1, 2])
+    @test all(reduced_ball_p2.is_active .== [false, false])
+    @test reduced_ball_p2.p == 2
+    @test reduced_ball_p2.dim == 0
+
+    reduced_ball_pInf = getReducedDimBall(1, 2.0, ball_pInf)
+    @test reduced_ball_pInf.center == [2.0, 0.0]
+    @test reduced_ball_pInf.radius == 2.0
+    @test all(reduced_ball_pInf.active_dim .== [2])
+    @test all(reduced_ball_pInf.inactive_dim .== [1])
+    @test all(reduced_ball_pInf.is_active .== [false, true])
+    @test reduced_ball_pInf.p == Inf
+    @test reduced_ball_pInf.dim == 1
+end
+
+@testset "getReducedDimBall(ball): Slice of an already low-dimensional ball" begin
+    ball_p1 = Ball([0.0, 0.0, 0.0], 2.0, p=1, active_indices=true, indices=[1, 3])
+    ball_p2 = Ball([0.0, 0.0, 0.0], 2.0, p=2, active_indices=true, indices=[1, 3])
+    ball_pInf = Ball([0.0, 0.0, 0.0], 2.0, p=Inf, active_indices=true, indices=[1, 3])
+
+    reduced_ball_p1 = getReducedDimBall(3, 1.0, ball_p1)
+    @test reduced_ball_p1.center == [0.0, 0.0, 1.0]
+    @test reduced_ball_p1.radius == 1.0
+    @test all(reduced_ball_p1.active_dim .== [1])
+    @test all(reduced_ball_p1.inactive_dim .== [2, 3])
+    @test all(reduced_ball_p1.is_active .== [true, false, false])
+    @test reduced_ball_p1.p == 1
+    @test reduced_ball_p1.dim == 1
+
+    reduced_ball_p2 = getReducedDimBall(3, 1.0, ball_p2)
+    @test reduced_ball_p2.center == [0.0, 0.0, 1.0]
+    @test isapprox(reduced_ball_p2.radius, sqrt(3.0))
+    @test all(reduced_ball_p2.active_dim .== [1])
+    @test all(reduced_ball_p2.inactive_dim .== [2, 3])
+    @test all(reduced_ball_p2.is_active .== [true, false, false])
+    @test reduced_ball_p2.p == 2
+    @test reduced_ball_p2.dim == 1
+
+    reduced_ball_pInf = getReducedDimBall(3, 1.0, ball_pInf)
+    @test reduced_ball_pInf.center == [0.0, 0.0, 1.0]
+    @test reduced_ball_pInf.radius == 2.0
+    @test all(reduced_ball_pInf.active_dim .== [1])
+    @test all(reduced_ball_pInf.inactive_dim .== [2, 3])
+    @test all(reduced_ball_pInf.is_active .== [true, false, false])
+    @test reduced_ball_pInf.p == Inf
+    @test reduced_ball_pInf.dim == 1
+end
+
+# `tightenBVBounds!` --------------------------------------------------
+@testset "tightenBVBounds!(bv, ball): 1D ball uses the correct active dimension" begin
+    bv_p1 = BoundingVolume([-5.0, -2.0, -5.0], [5.0, 5.0, 5.0])
+    bv_p2 = BoundingVolume([-5.0, -2.0, -5.0], [5.0, 5.0, 5.0])
+    bv_pInf = BoundingVolume([-5.0, -2.0, -5.0], [5.0, 5.0, 5.0])
+
+    ball_p1 = Ball([0.0, 2.0, 0.0], 1.0, p=1, active_indices=true, indices=[2])
+    ball_p2 = Ball([0.0, 2.0, 0.0], 1.0, p=2, active_indices=true, indices=[2])
+    ball_pInf = Ball([0.0, 2.0, 0.0], 1.0, p=Inf, active_indices=true, indices=[2])
+
+    altered_lb_indices_p1, altered_ub_indices_p1 = tightenBVBounds!(bv_p1, ball_p1)
+    @test bv_p1.lb == [-5.0, 1.0, -5.0]
+    @test bv_p1.ub == [5.0, 3.0, 5.0]
+    @test altered_lb_indices_p1 == [2]
+    @test altered_ub_indices_p1 == [2]
+
+    altered_lb_indices_p2, altered_ub_indices_p2 = tightenBVBounds!(bv_p2, ball_p2)
+    @test bv_p2.lb == [-5.0, 1.0, -5.0]
+    @test bv_p2.ub == [5.0, 3.0, 5.0]
+    @test altered_lb_indices_p2 == [2]
+    @test altered_ub_indices_p2 == [2]
+
+    altered_lb_indices_pInf, altered_ub_indices_pInf = tightenBVBounds!(bv_pInf, ball_pInf)
+    @test bv_pInf.lb == [-5.0, 1.0, -5.0]
+    @test bv_pInf.ub == [5.0, 3.0, 5.0]
+    @test altered_lb_indices_pInf == [2]
+    @test altered_ub_indices_pInf == [2]
+end
+
+@testset "tightenBVBounds!(bv, ball): 1D ball tightens only one side when the other is already on the boundary" begin
+    bv_p1 = BoundingVolume([-2.0, -5.0], [2.0, 5.0])
+    bv_p2 = BoundingVolume([-2.0, -5.0], [2.0, 5.0])
+    bv_pInf = BoundingVolume([-2.0, -5.0], [2.0, 5.0])
+
+    ball_p1 = Ball([-1.0, 0.0], 1.0, p=1, active_indices=true, indices=[1])
+    ball_p2 = Ball([-1.0, 0.0], 1.0, p=2, active_indices=true, indices=[1])
+    ball_pInf = Ball([-1.0, 0.0], 1.0, p=Inf, active_indices=true, indices=[1])
+
+    altered_lb_indices_p1, altered_ub_indices_p1 = tightenBVBounds!(bv_p1, ball_p1)
+    @test bv_p1.lb == [-2.0, -5.0]
+    @test bv_p1.ub == [0.0, 5.0]
+    @test altered_lb_indices_p1 == []
+    @test altered_ub_indices_p1 == [1]
+
+    altered_lb_indices_p2, altered_ub_indices_p2 = tightenBVBounds!(bv_p2, ball_p2)
+    @test bv_p2.lb == [-2.0, -5.0]
+    @test bv_p2.ub == [0.0, 5.0]
+    @test altered_lb_indices_p2 == []
+    @test altered_ub_indices_p2 == [1]
+
+    altered_lb_indices_pInf, altered_ub_indices_pInf = tightenBVBounds!(bv_pInf, ball_pInf)
+    @test bv_pInf.lb == [-2.0, -5.0]
+    @test bv_pInf.ub == [0.0, 5.0]
+    @test altered_lb_indices_pInf == []
+    @test altered_ub_indices_pInf == [1]
+end
+
+@testset "tightenBVBounds!(bv, ball): 1D ball does not update when the ball interval already matches the BV bounds" begin
+    bv_p1 = BoundingVolume([1.0, -5.0], [3.0, 5.0])
+    bv_p2 = BoundingVolume([1.0, -5.0], [3.0, 5.0])
+    bv_pInf = BoundingVolume([1.0, -5.0], [3.0, 5.0])
+
+    ball_p1 = Ball([2.0, 0.0], 1.0, p=1, active_indices=true, indices=[1])
+    ball_p2 = Ball([2.0, 0.0], 1.0, p=2, active_indices=true, indices=[1])
+    ball_pInf = Ball([2.0, 0.0], 1.0, p=Inf, active_indices=true, indices=[1])
+
+    altered_lb_indices_p1, altered_ub_indices_p1 = tightenBVBounds!(bv_p1, ball_p1)
+    @test bv_p1.lb == [1.0, -5.0]
+    @test bv_p1.ub == [3.0, 5.0]
+    @test altered_lb_indices_p1 == []
+    @test altered_ub_indices_p1 == []
+
+    altered_lb_indices_p2, altered_ub_indices_p2 = tightenBVBounds!(bv_p2, ball_p2)
+    @test bv_p2.lb == [1.0, -5.0]
+    @test bv_p2.ub == [3.0, 5.0]
+    @test altered_lb_indices_p2 == []
+    @test altered_ub_indices_p2 == []
+
+    altered_lb_indices_pInf, altered_ub_indices_pInf = tightenBVBounds!(bv_pInf, ball_pInf)
+    @test bv_pInf.lb == [1.0, -5.0]
+    @test bv_pInf.ub == [3.0, 5.0]
+    @test altered_lb_indices_pInf == []
+    @test altered_ub_indices_pInf == []
+end
+
+@testset "tightenBVBounds!(bv, ball): 2D ball triggers non-simple face updates" begin
+    bv_p1 = BoundingVolume([-3.0, -3.0], [4.0, 4.0])
+    bv_p2 = BoundingVolume([-3.0, -3.0], [4.0, 4.0])
+    bv_pInf = BoundingVolume([-3.0, -3.0], [4.0, 4.0])
+
+    ball_p1 = Ball([1.0, 1.0], 1.0, p=1)
+    ball_p2 = Ball([1.0, 1.0], 1.0, p=2)
+    ball_pInf = Ball([1.0, 1.0], 1.0, p=Inf)
+
+    altered_lb_indices_p1, altered_ub_indices_p1 = tightenBVBounds!(bv_p1, ball_p1)
+    @test bv_p1.lb == [0.0, 0.0]
+    @test bv_p1.ub == [2.0, 2.0]
+    @test sort(unique(altered_lb_indices_p1)) == [1, 2]
+    @test sort(unique(altered_ub_indices_p1)) == [1, 2]
+
+    altered_lb_indices_p2, altered_ub_indices_p2 = tightenBVBounds!(bv_p2, ball_p2)
+    @test bv_p2.lb == [0.0, 0.0]
+    @test bv_p2.ub == [2.0, 2.0]
+    @test sort(unique(altered_lb_indices_p2)) == [1, 2]
+    @test sort(unique(altered_ub_indices_p2)) == [1, 2]
+
+    altered_lb_indices_pInf, altered_ub_indices_pInf = tightenBVBounds!(bv_pInf, ball_pInf)
+    @test bv_pInf.lb == [0.0, 0.0]
+    @test bv_pInf.ub == [2.0, 2.0]
+    @test sort(unique(altered_lb_indices_pInf)) == [1, 2]
+    @test sort(unique(altered_ub_indices_pInf)) == [1, 2]
+end
+
+@testset "tightenBVBounds!(bv, ball): 2D ball triggers recursive simple-intersection updates" begin
+    bv_p1 = BoundingVolume([0.0, 0.0], [2.0, 2.0])
+    bv_p2 = BoundingVolume([0.0, 0.0], [2.0, 2.0])
+    bv_pInf = BoundingVolume([0.0, 0.0], [2.0, 2.0])
+
+    ball_p1 = Ball([2.5, 2.5], 1.7, p=1)
+    ball_p2 = Ball([2.5, 2.5], 1.7, p=2)
+    ball_pInf = Ball([2.5, 2.5], 1.7, p=Inf)
+
+    altered_lb_indices_p1, altered_ub_indices_p1 = tightenBVBounds!(bv_p1, ball_p1)
+    @test isapprox(bv_p1.lb[1], 1.3; atol=1e-12)
+    @test isapprox(bv_p1.lb[2], 1.3; atol=1e-12)
+    @test bv_p1.ub == [2.0, 2.0]
+    @test sort(unique(altered_lb_indices_p1)) == [1, 2]
+    @test altered_ub_indices_p1 == []
+
+    altered_lb_indices_p2, altered_ub_indices_p2 = tightenBVBounds!(bv_p2, ball_p2)
+    @test isapprox(bv_p2.lb[1], 2.5 - sqrt(1.7^2 - 0.5^2); atol=1e-12)
+    @test isapprox(bv_p2.lb[2], 2.5 - sqrt(1.7^2 - 0.5^2); atol=1e-12)
+    @test bv_p2.ub == [2.0, 2.0]
+    @test sort(unique(altered_lb_indices_p2)) == [1, 2]
+    @test altered_ub_indices_p2 == []
+
+    altered_lb_indices_pInf, altered_ub_indices_pInf = tightenBVBounds!(bv_pInf, ball_pInf)
+    @test isapprox(bv_pInf.lb[1], 0.8; atol=1e-12)
+    @test isapprox(bv_pInf.lb[2], 0.8; atol=1e-12)
+    @test bv_pInf.ub == [2.0, 2.0]
+    @test sort(unique(altered_lb_indices_pInf)) == [1, 2]
+    @test altered_ub_indices_pInf == []
+end
+
+# `getIntersection(bv, ball)` --------------------------------------------------
+@testset "getIntersection(bv, ball): No intersection returns an empty BoundingVolume" begin
+    bv_p1 = BoundingVolume([0.0, 0.0], [1.0, 1.0])
+    bv_p2 = BoundingVolume([0.0, 0.0], [1.0, 1.0])
+    bv_pInf = BoundingVolume([0.0, 0.0], [1.0, 1.0])
+
+    ball_p1 = Ball([3.0, 3.0], 1.0, p=1)
+    ball_p2 = Ball([3.0, 3.0], 1.0, p=2)
+    ball_pInf = Ball([3.0, 3.0], 1.0, p=Inf)
+
+    intersection_p1 = getIntersection(bv_p1, ball_p1)
+    @test intersection_p1 == BoundingVolume()
+
+    intersection_p2 = getIntersection(bv_p2, ball_p2)
+    @test intersection_p2 == BoundingVolume()
+
+    intersection_pInf = getIntersection(bv_pInf, ball_pInf)
+    @test intersection_pInf == BoundingVolume()
+end
+
+@testset "getIntersection(bv, ball): BV completely contained in the ball returns the BV unchanged" begin
+    bv_p1 = BoundingVolume([-1.0, -1.0], [1.0, 1.0])
+    bv_p2 = BoundingVolume([-1.0, -1.0], [1.0, 1.0])
+    bv_pInf = BoundingVolume([-1.0, -1.0], [1.0, 1.0])
+
+    ball_p1 = Ball([0.0, 0.0], 3.0, p=1)
+    ball_p2 = Ball([0.0, 0.0], 3.0, p=2)
+    ball_pInf = Ball([0.0, 0.0], 3.0, p=Inf)
+
+    expected_bv = BoundingVolume([-1.0, -1.0], [1.0, 1.0])
+
+    intersection_p1 = getIntersection(bv_p1, ball_p1)
+    @test intersection_p1 == expected_bv
+
+    intersection_p2 = getIntersection(bv_p2, ball_p2)
+    @test intersection_p2 == expected_bv
+
+    intersection_pInf = getIntersection(bv_pInf, ball_pInf)
+    @test intersection_pInf == expected_bv
+end
+
+@testset "getIntersection(bv, ball): Ball completely inside the BV returns the ball's bounding box" begin
+    bv_p1 = BoundingVolume([-3.0, -3.0], [4.0, 4.0])
+    bv_p2 = BoundingVolume([-3.0, -3.0], [4.0, 4.0])
+    bv_pInf = BoundingVolume([-3.0, -3.0], [4.0, 4.0])
+
+    ball_p1 = Ball([1.0, 1.0], 1.0, p=1)
+    ball_p2 = Ball([1.0, 1.0], 1.0, p=2)
+    ball_pInf = Ball([1.0, 1.0], 1.0, p=Inf)
+
+    expected_bv = BoundingVolume([0.0, 0.0], [2.0, 2.0])
+
+    intersection_p1 = getIntersection(bv_p1, ball_p1)
+    @test intersection_p1 == expected_bv
+
+    intersection_p2 = getIntersection(bv_p2, ball_p2)
+    @test intersection_p2 == expected_bv
+
+    intersection_pInf = getIntersection(bv_pInf, ball_pInf)
+    @test intersection_pInf == expected_bv
+end
+
+@testset "getIntersection(bv, ball): Partial overlap crops and then tightens the BV" begin
+    bv_p1 = BoundingVolume([0.0, 0.0], [2.0, 2.0])
+    bv_p2 = BoundingVolume([0.0, 0.0], [2.0, 2.0])
+    bv_pInf = BoundingVolume([0.0, 0.0], [2.0, 2.0])
+
+    ball_p1 = Ball([2.5, 2.5], 1.7, p=1)
+    ball_p2 = Ball([2.5, 2.5], 1.7, p=2)
+    ball_pInf = Ball([2.5, 2.5], 1.7, p=Inf)
+
+    intersection_p1 = getIntersection(bv_p1, ball_p1)
+    @test isapprox(intersection_p1.lb[1], 1.3; atol=1e-12)
+    @test isapprox(intersection_p1.lb[2], 1.3; atol=1e-12)
+    @test intersection_p1.ub == [2.0, 2.0]
+
+    intersection_p2 = getIntersection(bv_p2, ball_p2)
+    @test isapprox(intersection_p2.lb[1], 2.5 - sqrt(1.7^2 - 0.5^2); atol=1e-12)
+    @test isapprox(intersection_p2.lb[2], 2.5 - sqrt(1.7^2 - 0.5^2); atol=1e-12)
+    @test intersection_p2.ub == [2.0, 2.0]
+
+    intersection_pInf = getIntersection(bv_pInf, ball_pInf)
+    @test isapprox(intersection_pInf.lb[1], 0.8; atol=1e-12)
+    @test isapprox(intersection_pInf.lb[2], 0.8; atol=1e-12)
+    @test intersection_pInf.ub == [2.0, 2.0]
+end
