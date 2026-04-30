@@ -108,6 +108,63 @@ end
     @test !isContained(plane, query_pt3)
 end
 
+# `getClosestPoint(pt, plane)` ------------------------------------------------
+@testset "getClosestPoint(pt, plane): Point dimension must match hyperplane embedding dimension" begin
+    plane = Hyperplane([0.0, 0.0, 0.0], [1.0, 0.0, 0.0])
+
+    @test_throws "SearchableGeometries.Hyperplane: point dimension(2) does not match hyperplane embedding dimension(3)" getClosestPoint([0.0, 0.0], plane)
+    @test_throws "SearchableGeometries.Hyperplane: point dimension(4) does not match hyperplane embedding dimension(3)" getClosestPoint([0.0, 0.0, 0.0, 0.0], plane)
+end
+
+@testset "getClosestPoint(pt, plane): point already on the hyperplane" begin
+    plane = Hyperplane([0.0, 0.0], [1.0, 0.0])  # x = 0
+    pt = [0.0, 2.0]
+
+    closest_pt = getClosestPoint(pt, plane)
+    @test isapprox(closest_pt, [0.0, 2.0])
+    @test isContained(plane, closest_pt)
+end
+
+@testset "getClosestPoint(pt, plane): point in front of plane" begin
+    plane = Hyperplane([0.0, 0.0], [1.0, 0.0])  # x = 0
+    pt = [3.0, 2.0]
+
+    closest_pt = getClosestPoint(pt, plane)
+    @test isapprox(closest_pt, [0.0, 2.0])
+    @test isContained(plane, closest_pt)
+end
+
+@testset "getClosestPoint(pt, plane): point behind plane" begin
+    plane = Hyperplane([0.0, 0.0], [1.0, 0.0])  # x = 0
+    pt = [-3.0, 2.0]
+
+    closest_pt = getClosestPoint(pt, plane)
+
+    @test isapprox(closest_pt, [0.0, 2.0])
+    @test isContained(plane, closest_pt)
+end
+
+@testset "getClosestPoint(pt, plane): slanted plane" begin
+    # Plane x - y = 0, or y = x.
+    plane = Hyperplane([0.0, 0.0], [1.0, -1.0])
+    pt = [2.0, 0.0]
+
+    closest_pt = getClosestPoint(pt, plane)
+
+    @test isapprox(closest_pt, [1.0, 1.0])
+    @test isContained(plane, closest_pt)
+end
+
+@testset "getClosestPoint(pt, plane): higher dimension" begin
+    plane = Hyperplane([0.0, 0.0, 0.0], [0.0, 0.0, 1.0])  # z = 0
+    pt = [1.0, 2.0, 5.0]
+
+    closest_pt = getClosestPoint(pt, plane)
+
+    @test all(closest_pt .== [1.0, 2.0, 0.0])
+    @test isContained(plane, closest_pt)
+end
+
 # Hyperplane -> BVs --------------------------------------------------------------
 # `intersects(bv, plane)` --------------------------------------------------------
 @testset "intersects(bv, plane): Dimension mismatch throws" begin

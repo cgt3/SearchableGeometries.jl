@@ -105,7 +105,7 @@ function Base.:(==)(bv1::BoundingVolume, bv2::BoundingVolume)
            all(bv1.is_active .== bv2.is_active)
 end
 
-function getClosestPoint(bv::BoundingVolume, query_pt::Array)
+function getClosestPoint(bv::BoundingVolume, query_pt::Vector{<:Real})
     closest_pt = copy(query_pt)
 
     I_lb = query_pt .< bv.lb
@@ -117,7 +117,7 @@ function getClosestPoint(bv::BoundingVolume, query_pt::Array)
     return closest_pt
 end
 
-function getFurthestPoint(bv::BoundingVolume, query_pt::Array)
+function getFurthestPoint(bv::BoundingVolume, query_pt::Vector{<:Real})
     furthest_pt = similar(query_pt)
 
     ub_is_closer = 0.5 * (bv.ub + bv.lb) .<= query_pt
@@ -129,7 +129,7 @@ function getFurthestPoint(bv::BoundingVolume, query_pt::Array)
     return furthest_pt
 end
 
-function isContained(bv::BoundingVolume, query_pt::Array; include_boundary::Bool=true)
+function isContained(bv::BoundingVolume, query_pt::Vector{<:Real}; include_boundary::Bool=true)
     if (include_boundary && all(bv.lb .<= query_pt .<= bv.ub)) ||
        (!include_boundary && all(bv.lb .< query_pt .< bv.ub))
         return true
@@ -482,6 +482,14 @@ function isContained(plane::Hyperplane, query_pt::Vector{<:Real}; tol::Real=DEFA
     end
 
     return abs(dot(plane.n, query_pt - plane.point)) <= tol
+end
+
+function getClosestPoint(pt::Vector{<:Real}, query_plane::Hyperplane)
+    if length(pt) != query_plane.embedding_dim
+        throw("SearchableGeometries.Hyperplane: point dimension($(length(pt))) does not match hyperplane embedding dimension($(query_plane.embedding_dim))")
+    end
+
+    return pt - dot(query_plane.n, pt - query_plane.point) * query_plane.n
 end
 
 function signedExtrema(bv::BoundingVolume, query_plane::Hyperplane)
