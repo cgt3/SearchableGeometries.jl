@@ -70,7 +70,7 @@ struct BoundingVolume <: SearchableGeometry
     end
 
     function BoundingVolume(
-        lb::Vector{<:Real}, ub::Vector{<:Real}; tol=DEFAULT_BV_POINT_TOL::Real
+        lb::Vector{<:Real}, ub::Vector{<:Real}; tol::Real=DEFAULT_BV_POINT_TOL
     )
         if length(lb) != length(ub)
             throw("SearchableGeometries: BoundingVolume: lb (length: $(length(lb))) and ub (length: $(length(ub))) have different dimensions.")
@@ -129,7 +129,7 @@ function getFurthestPoint(bv::BoundingVolume, query_pt::Array)
     return furthest_pt
 end
 
-function isContained(bv::BoundingVolume, query_pt::Array; include_boundary=true::Bool)
+function isContained(bv::BoundingVolume, query_pt::Array; include_boundary::Bool=true)
     if (include_boundary && all(bv.lb .<= query_pt .<= bv.ub)) ||
        (!include_boundary && all(bv.lb .< query_pt .< bv.ub))
         return true
@@ -138,7 +138,7 @@ function isContained(bv::BoundingVolume, query_pt::Array; include_boundary=true:
     end
 end
 
-function isContained(bv::BoundingVolume, query_bv::BoundingVolume; include_boundary=true::Bool)
+function isContained(bv::BoundingVolume, query_bv::BoundingVolume; include_boundary::Bool=true)
     if (!include_boundary && (all(query_bv.ub .< bv.ub) && all(query_bv.lb .> bv.lb))) ||
        (include_boundary && (all(query_bv.ub .<= bv.ub) && all(query_bv.lb .>= bv.lb)))
         return true
@@ -147,7 +147,7 @@ function isContained(bv::BoundingVolume, query_bv::BoundingVolume; include_bound
     end
 end
 
-function intersects(bv1::BoundingVolume, bv2::BoundingVolume; include_boundary=true::Bool)
+function intersects(bv1::BoundingVolume, bv2::BoundingVolume; include_boundary::Bool=true)
     if (include_boundary && (any(bv1.lb .> bv2.ub) || any(bv1.ub .< bv2.lb))) ||
        (!include_boundary && (any(bv1.lb .>= bv2.ub) || any(bv1.ub .<= bv2.lb)))
         return false
@@ -156,7 +156,7 @@ function intersects(bv1::BoundingVolume, bv2::BoundingVolume; include_boundary=t
     end
 end
 
-function getIntersection(bv1::BoundingVolume, bv2::BoundingVolume; tol=DEFAULT_BV_POINT_TOL::Real)
+function getIntersection(bv1::BoundingVolume, bv2::BoundingVolume; tol::Real=DEFAULT_BV_POINT_TOL)
     if bv1.is_empty || bv2.is_empty
         return BoundingVolume()
     end
@@ -174,7 +174,7 @@ function faceIndex2SpatialIndex(face_index::Integer, num_dim::Integer)
     return face_index <= num_dim ? face_index : face_index - num_dim
 end
 
-function getFaceBoundingVolume(face_index::Integer, bv::BoundingVolume; tol=DEFAULT_BV_POINT_TOL::Real)
+function getFaceBoundingVolume(face_index::Integer, bv::BoundingVolume; tol::Real=DEFAULT_BV_POINT_TOL)
     face_lb, face_ub = copy(bv.lb), copy(bv.ub)
 
     if face_index <= length(bv.lb) # Lower bound face
@@ -227,8 +227,8 @@ struct Ball <: SearchableGeometry
     embedding_dim::Integer              # embedding dimension
 
     function Ball(
-        center::Vector{<:Real}, radius::Real; p=2::Real,
-        active_indices=true::Bool, indices=(active_indices ? [eachindex(center)...] : Vector{Int}[])::Vector{Int}
+        center::Vector{<:Real}, radius::Real; p::Real=2::Real,
+        active_indices::Bool=true::Bool, indices=(active_indices ? [eachindex(center)...] : Vector{Int}[])::Vector{Int}
     )
         if radius < 0
             throw("SearchableGeometries.Ball: Cannot construct ball with negative radius.")
@@ -270,13 +270,13 @@ function Base.:(==)(ball1::Ball, ball2::Ball)
            ball1.embedding_dim == ball2.embedding_dim
 end
 
-function BoundingVolume(ball::Ball; tol=DEFAULT_BV_POINT_TOL::Real)
+function BoundingVolume(ball::Ball; tol::Real=DEFAULT_BV_POINT_TOL)
     lb = ball.center .- ball.radius
     ub = ball.center .+ ball.radius
     return BoundingVolume(lb, ub; tol=tol)
 end
 
-function isContained(ball::Ball, query_pt::Vector{<:Real}; include_boundary=true::Bool, tol=DEFAULT_BV_POINT_TOL::Real)
+function isContained(ball::Ball, query_pt::Vector{<:Real}; include_boundary::Bool=true, tol::Real=DEFAULT_BV_POINT_TOL)
     if length(query_pt) != ball.embedding_dim
         throw("Point dimension($(length(query_pt))) does not match ball embedding dimension($(ball.embedding_dim))")
     end
@@ -295,16 +295,16 @@ function isContained(ball::Ball, query_pt::Vector{<:Real}; include_boundary=true
     return include_boundary ? R_query <= ball.radius : R_query < ball.radius
 end
 
-function isContained(bv::BoundingVolume, query_ball::Ball; include_boundary=true::Bool, tol=DEFAULT_BV_POINT_TOL::Real)
+function isContained(bv::BoundingVolume, query_ball::Ball; include_boundary::Bool=true, tol::Real=DEFAULT_BV_POINT_TOL)
     return isContained(bv, BoundingVolume(query_ball; tol=tol); include_boundary=include_boundary)
 end
 
-function isContained(ball::Ball, query_bv::BoundingVolume; include_boundary=true::Bool)
+function isContained(ball::Ball, query_bv::BoundingVolume; include_boundary::Bool=true)
     furthest_pt = getFurthestPoint(query_bv, ball.center)
     return isContained(ball, furthest_pt; include_boundary=include_boundary)
 end
 
-function intersects(bv::BoundingVolume, ball::Ball; include_boundary=true::Bool, tol=DEFAULT_BV_POINT_TOL::Real)
+function intersects(bv::BoundingVolume, ball::Ball; include_boundary::Bool=true, tol::Real=DEFAULT_BV_POINT_TOL)
     # First, do the easy checks against the ball's BV:
     if !intersects(bv, BoundingVolume(ball; tol=tol); include_boundary=include_boundary)
         # The two are completely disjoint
@@ -336,7 +336,7 @@ function getReducedDimBall(removal_dim::Integer, x_d::Real, ball::Ball)
     return Ball(new_center, new_radius; p=ball.p, active_indices=false, indices=inactive_dim)
 end
 
-function tightenBVBounds!(bv::BoundingVolume, ball::Ball; tol=DEFAULT_BV_POINT_TOL::Real)
+function tightenBVBounds!(bv::BoundingVolume, ball::Ball; tol::Real=DEFAULT_BV_POINT_TOL)
     if ball.dim == 1
         d = ball.active_dim[1]
         lb_ball = ball.center[d] - ball.radius
@@ -420,7 +420,7 @@ function tightenBVBounds!(bv::BoundingVolume, ball::Ball; tol=DEFAULT_BV_POINT_T
     return altered_lb_indices, altered_ub_indices
 end
 
-function getIntersection(bv::BoundingVolume, ball::Ball; tol=DEFAULT_BV_POINT_TOL::Real)
+function getIntersection(bv::BoundingVolume, ball::Ball; tol::Real=DEFAULT_BV_POINT_TOL)
     if !intersects(bv, ball; include_boundary=true, tol=tol)
         return BoundingVolume()
     end
@@ -466,7 +466,7 @@ struct Hyperplane <: SearchableGeometry
 end
 
 import Base.==
-function Base.:(==)(plane1::Hyperplane, plane2::Hyperplane; tol=DEFAULT_BV_POINT_TOL::Real)
+function Base.:(==)(plane1::Hyperplane, plane2::Hyperplane; tol::Real=DEFAULT_BV_POINT_TOL)
     return all(plane1.point .== plane2.point) &&
            all(plane1.n .== plane2.n) &&
            plane1.dim == plane2.dim &&
@@ -476,7 +476,7 @@ function Base.:(==)(plane1::Hyperplane, plane2::Hyperplane; tol=DEFAULT_BV_POINT
            all(plane1.is_active .== plane2.is_active)
 end
 
-function isContained(plane::Hyperplane, query_pt::Vector{<:Real}; tol=DEFAULT_BV_POINT_TOL::Real)
+function isContained(plane::Hyperplane, query_pt::Vector{<:Real}; tol::Real=DEFAULT_BV_POINT_TOL)
     if length(query_pt) != plane.embedding_dim
         throw("SearchableGeometries.Hyperplane: point dimension($(length(query_pt))) does not match hyperplane embedding dimension($(plane.embedding_dim))")
     end
@@ -484,7 +484,39 @@ function isContained(plane::Hyperplane, query_pt::Vector{<:Real}; tol=DEFAULT_BV
     return abs(dot(plane.n, query_pt - plane.point)) <= tol
 end
 
-function intersects(bv::BoundingVolume, query_plane::Hyperplane; include_boundary=true::Bool, tol=DEFAULT_BV_POINT_TOL::Real)
+function signedExtrema(bv::BoundingVolume, query_plane::Hyperplane)
+    # We study the signed offset function
+    #     h(x) = dot(n, x - point)
+    # over the whole BV. Since h is linear, its minimum and maximum
+    # occur at corners of the box.
+    T = promote_type(eltype(bv.lb), eltype(bv.ub), eltype(query_plane.point), eltype(query_plane.n))
+    smin = zero(T)
+    smax = zero(T)
+
+
+    for d in eachindex(bv.lb)
+        nd = query_plane.n[d]
+
+        if nd > 0
+            # Positive normal component:
+            # - Lower bound gives the minimum signed value,
+            # - Upper bound gives the maximum signed value.
+            smin += nd * (bv.lb[d] - query_plane.point[d])
+            smax += nd * (bv.ub[d] - query_plane.point[d])
+        elseif nd < 0
+            # Negative normal component:
+            # - Lower bound gives the maximum signed value,
+            # - Upper bound gives the minimum signed value.
+            smin += nd * (bv.ub[d] - query_plane.point[d])
+            smax += nd * (bv.lb[d] - query_plane.point[d])
+        end
+        # If nd == 0, this coordinate does not affect the signed offset
+    end
+
+    return smin, smax
+end
+
+function intersects(bv::BoundingVolume, query_plane::Hyperplane; include_boundary::Bool=true, tol::Real=DEFAULT_BV_POINT_TOL)
     # If the bounding volume is empty, it cannot intersect with anything
     if bv.is_empty
         return false
@@ -495,186 +527,167 @@ function intersects(bv::BoundingVolume, query_plane::Hyperplane; include_boundar
         throw("SearchableGeometries.Hyperplane: bounding volume dimension($(length(bv.lb))) does not match hyperplane embedding dimension($(query_plane.embedding_dim))")
     end
 
-    # We study the signed offset function
-    #     h(x) = dot(n, x - point)
-    # over the whole BV. Since h is linear, its minimum and maximum
-    # occur at corners of the box.
-    T = promote_type(eltype(bv.lb), eltype(query_plane.point), eltype(query_plane.n), typeof(tol))
-    min_offset = zero(T)
-    max_offset = zero(T)
-
-
-    for d in eachindex(bv.lb)
-        nd = query_plane.n[d]
-
-        if nd > 0
-            min_offset += nd * (bv.lb[d] - query_plane.point[d])
-            max_offset += nd * (bv.ub[d] - query_plane.point[d])
-        elseif nd < 0
-            min_offset += nd * (bv.ub[d] - query_plane.point[d])
-            max_offset += nd * (bv.lb[d] - query_plane.point[d])
-        end
-        # If nd == 0, this coordinate does not affect the signed offset
-    end
+    # Compute the minimum and maximum signed offsets over the BV
+    smin, smax = signedExtrema(bv, query_plane)
 
     if include_boundary
-        # The hyperplane intersects the bounding volume if 0 lies in [min_offset, max_offset]
-        return !(min_offset > tol || max_offset < -tol)
+        # The hyperplane intersects the bounding volume if 0 is in the interval [smin, smax]
+        return smin <= tol && smax >= -tol
     else
-        # The hyperplane intersects the bounding volume if 0 lies in (min_offset, max_offset)
-        return min_offset < -tol && max_offset > tol
+        # The hyperplane intersects the bounding volume if 0 is in the open interval (smin, smax)
+        return smin < -tol && smax > tol
     end
 end
 
-function getClosestPoint(bv::BoundingVolume, query_plane::Hyperplane; tol=DEFAULT_BV_POINT_TOL::Real)
-    # If the bounding volume is empty, it cannot intersect with anything
-    if bv.is_empty
-        return false
-    end
+# function getClosestPoint(bv::BoundingVolume, query_plane::Hyperplane; tol=DEFAULT_BV_POINT_TOL::Real)
+#     # If the bounding volume is empty, it cannot intersect with anything
+#     if bv.is_empty
+#         return false
+#     end
 
-    # The dimension of the bounding volume and the hyperplane must match
-    if length(bv.lb) != query_plane.embedding_dim
-        throw("SearchableGeometries.Hyperplane: bounding volume dimension($(length(bv.lb))) does not match hyperplane embedding dimension($(query_plane.embedding_dim))")
-    end
+#     # The dimension of the bounding volume and the hyperplane must match
+#     if length(bv.lb) != query_plane.embedding_dim
+#         throw("SearchableGeometries.Hyperplane: bounding volume dimension($(length(bv.lb))) does not match hyperplane embedding dimension($(query_plane.embedding_dim))")
+#     end
 
-    T = promote_type(eltype(bv.lb), eltype(query_plane.point), eltype(query_plane.n), typeof(tol))
-    min_offset = zero(T)
-    max_offset = zero(T)
+#     T = promote_type(eltype(bv.lb), eltype(query_plane.point), eltype(query_plane.n), typeof(tol))
+#     min_offset = zero(T)
+#     max_offset = zero(T)
 
-    # Case 1: the BV intersects the plane.
-    #
-    # Then the closest distance is 0, so any point in BV ∩ plane is
-    # a closest point. We construct the lexicographically smallest
-    # feasible point in that intersection.
-    if intersects(bv, query_plane; include_boundary=true, tol=tol)
-        closest_pt = Vector{T}(undef, length(bv.lb))
+#     # Case 1: the BV intersects the plane.
+#     #
+#     # Then the closest distance is 0, so any point in BV ∩ plane is
+#     # a closest point. We construct the lexicographically smallest
+#     # feasible point in that intersection.
+#     if intersects(bv, query_plane; include_boundary=true, tol=tol)
+#         closest_pt = Vector{T}(undef, length(bv.lb))
 
-        # Plane equation: dot(n, x) = c
-        c = dot(query_plane.n, query_plane.point)
+#         # Plane equation: dot(n, x) = c
+#         c = dot(query_plane.n, query_plane.point)
 
-        # prefix_sum stores the contribution from coordinates already fixed
-        prefix_sum = zero(T)
+#         # prefix_sum stores the contribution from coordinates already fixed
+#         prefix_sum = zero(T)
 
-        for j in eachindex(bv.lb)
-            nj = query_plane.n[j]
+#         for j in eachindex(bv.lb)
+#             nj = query_plane.n[j]
 
-            # Compute the smallest and largest possible contribution
-            # from the remaining coordinates j+1, ..., end
-            rem_min = zero(T)
-            rem_max = zero(T)
+#             # Compute the smallest and largest possible contribution
+#             # from the remaining coordinates j+1, ..., end
+#             rem_min = zero(T)
+#             rem_max = zero(T)
 
-            for k in (j+1):length(bv.lb)
-                nk = query_plane.n[k]
+#             for k in (j+1):length(bv.lb)
+#                 nk = query_plane.n[k]
 
-                if nk > 0
-                    rem_min += nk * bv.lb[k]
-                    rem_max += nk * bv.ub[k]
-                elseif nk < 0
-                    rem_min += nk * bv.ub[k]
-                    rem_max += nk * bv.lb[k]
-                end
-                # If nk == 0, coordinate k does not affect the plane equation
-            end
+#                 if nk > 0
+#                     rem_min += nk * bv.lb[k]
+#                     rem_max += nk * bv.ub[k]
+#                 elseif nk < 0
+#                     rem_min += nk * bv.ub[k]
+#                     rem_max += nk * bv.lb[k]
+#                 end
+#                 # If nk == 0, coordinate k does not affect the plane equation
+#             end
 
-            if iszero(nj)
-                # This coordinate does not affect the plane equation.
-                # To get the lexicographically smallest feasible point,
-                # choose the smallest allowed value.
-                closest_pt[j] = bv.lb[j]
-            else
-                # We need
-                #   prefix_sum + nj*x[j] + remaining_contribution = c
-                #
-                # Since remaining_contribution can vary in [rem_min, rem_max],
-                # x[j] must lie in a feasible interval determined by those bounds.
-                rhs_low = c - prefix_sum - rem_max
-                rhs_high = c - prefix_sum - rem_min
+#             if iszero(nj)
+#                 # This coordinate does not affect the plane equation.
+#                 # To get the lexicographically smallest feasible point,
+#                 # choose the smallest allowed value.
+#                 closest_pt[j] = bv.lb[j]
+#             else
+#                 # We need
+#                 #   prefix_sum + nj*x[j] + remaining_contribution = c
+#                 #
+#                 # Since remaining_contribution can vary in [rem_min, rem_max],
+#                 # x[j] must lie in a feasible interval determined by those bounds.
+#                 rhs_low = c - prefix_sum - rem_max
+#                 rhs_high = c - prefix_sum - rem_min
 
-                t1 = rhs_low / nj
-                t2 = rhs_high / nj
+#                 t1 = rhs_low / nj
+#                 t2 = rhs_high / nj
 
-                feasible_low = max(bv.lb[j], min(t1, t2))
-                feasible_high = min(bv.ub[j], max(t1, t2))
+#                 feasible_low = max(bv.lb[j], min(t1, t2))
+#                 feasible_high = min(bv.ub[j], max(t1, t2))
 
-                if feasible_low > feasible_high + tol
-                    throw("SearchableGeometries.Hyperplane: failed to construct a feasible closest point in the BV-plane intersection")
-                end
+#                 if feasible_low > feasible_high + tol
+#                     throw("SearchableGeometries.Hyperplane: failed to construct a feasible closest point in the BV-plane intersection")
+#                 end
 
-                # Lexicographically smallest feasible value
-                closest_pt[j] = feasible_low
-            end
+#                 # Lexicographically smallest feasible value
+#                 closest_pt[j] = feasible_low
+#             end
 
-            prefix_sum += nj * closest_pt[j]
-        end
+#             prefix_sum += nj * closest_pt[j]
+#         end
 
-        return closest_pt
-    end
+#         return closest_pt
+#     end
 
-    # We study the signed offset function
-    #     h(x) = dot(n, x - point)
-    # over the whole BV. Since h is linear, its minimum and maximum
-    # occur at corners of the box.
-    for d in eachindex(bv.lb)
-        nd = query_plane.n[d]
+#     # We study the signed offset function
+#     #     h(x) = dot(n, x - point)
+#     # over the whole BV. Since h is linear, its minimum and maximum
+#     # occur at corners of the box.
+#     for d in eachindex(bv.lb)
+#         nd = query_plane.n[d]
 
-        if nd > 0
-            min_offset += nd * (bv.lb[d] - query_plane.point[d])
-            max_offset += nd * (bv.ub[d] - query_plane.point[d])
-        elseif nd < 0
-            min_offset += nd * (bv.ub[d] - query_plane.point[d])
-            max_offset += nd * (bv.lb[d] - query_plane.point[d])
-        end
-        # If nd == 0, this coordinate does not affect the signed offset
-    end
+#         if nd > 0
+#             min_offset += nd * (bv.lb[d] - query_plane.point[d])
+#             max_offset += nd * (bv.ub[d] - query_plane.point[d])
+#         elseif nd < 0
+#             min_offset += nd * (bv.ub[d] - query_plane.point[d])
+#             max_offset += nd * (bv.lb[d] - query_plane.point[d])
+#         end
+#         # If nd == 0, this coordinate does not affect the signed offset
+#     end
 
-    # Case 2: the whole BV is on the positive side of the plane
-    # Then the closest point is any point minimizing h(x).
-    # With our tie-break rule, we return the lexicographically smallest
-    # minimizer.
-    if min_offset > tol
-        closest_pt = Vector{T}(undef, length(bv.lb))
+#     # Case 2: the whole BV is on the positive side of the plane
+#     # Then the closest point is any point minimizing h(x).
+#     # With our tie-break rule, we return the lexicographically smallest
+#     # minimizer.
+#     if min_offset > tol
+#         closest_pt = Vector{T}(undef, length(bv.lb))
 
-        for d in eachindex(bv.lb)
-            nd = query_plane.n[d]
+#         for d in eachindex(bv.lb)
+#             nd = query_plane.n[d]
 
-            if nd > 0
-                closest_pt[d] = bv.lb[d]
-            elseif nd < 0
-                closest_pt[d] = bv.ub[d]
-            else
-                # This coordinate does not matter for distance,
-                # so choose the smallest allowed value
-                closest_pt[d] = bv.lb[d]
-            end
-        end
+#             if nd > 0
+#                 closest_pt[d] = bv.lb[d]
+#             elseif nd < 0
+#                 closest_pt[d] = bv.ub[d]
+#             else
+#                 # This coordinate does not matter for distance,
+#                 # so choose the smallest allowed value
+#                 closest_pt[d] = bv.lb[d]
+#             end
+#         end
 
-        return closest_pt
-    end
+#         return closest_pt
+#     end
 
-    # Case 3: the whole BV is on the negative side of the plane
-    # Then the closest point is any point maximizing h(x).
-    # With our tie-break rule, we return the lexicographically smallest
-    # maximizer.
-    if max_offset < -tol
-        closest_pt = Vector{T}(undef, length(bv.lb))
+#     # Case 3: the whole BV is on the negative side of the plane
+#     # Then the closest point is any point maximizing h(x).
+#     # With our tie-break rule, we return the lexicographically smallest
+#     # maximizer.
+#     if max_offset < -tol
+#         closest_pt = Vector{T}(undef, length(bv.lb))
 
-        for d in eachindex(bv.lb)
-            nd = query_plane.n[d]
+#         for d in eachindex(bv.lb)
+#             nd = query_plane.n[d]
 
-            if nd > 0
-                closest_pt[d] = bv.ub[d]
-            elseif nd < 0
-                closest_pt[d] = bv.lb[d]
-            else
-                # This coordinate does not matter for distance,
-                # so choose the smallest allowed value
-                closest_pt[d] = bv.lb[d]
-            end
-        end
+#             if nd > 0
+#                 closest_pt[d] = bv.ub[d]
+#             elseif nd < 0
+#                 closest_pt[d] = bv.lb[d]
+#             else
+#                 # This coordinate does not matter for distance,
+#                 # so choose the smallest allowed value
+#                 closest_pt[d] = bv.lb[d]
+#             end
+#         end
 
-        return closest_pt
-    end
-end
+#         return closest_pt
+#     end
+# end
 
 function getFurthestPoint(bv::BoundingVolume, query_plane::Hyperplane; tol=DEFAULT_BV_POINT_TOL::Real)
     # TODO
@@ -695,7 +708,7 @@ struct Line
             throw("SearchableGeometries.Line: direction vector and source point dimension must match")
         end
 
-        return new(dir / norm(dir), source)
+        return new(dir ./ norm(dir), source)
     end
 end
 
