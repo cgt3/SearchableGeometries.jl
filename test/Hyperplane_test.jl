@@ -213,3 +213,63 @@ end
     @test intersects(bv, plane; include_boundary=true)
     @test !intersects(bv, plane; include_boundary=false)
 end
+
+# getIntersection -----------------------------------------------------------------
+@testset "getIntersection(bv, plane): No intersection returns an empty BoundingVolume" begin
+    bv = BoundingVolume([0.0, 0.0], [1.0, 1.0])
+    plane = Hyperplane([2.0, 0.0], [1.0, 0.0])   # x = 2
+
+    intersection_bv = getIntersection(bv, plane)
+
+    @test intersection_bv == BoundingVolume()
+end
+
+@testset "getIntersection(bv, plane): Plane cuts through 2D BV interior" begin
+    bv = BoundingVolume([0.0, 0.0], [2.0, 2.0])
+    plane = Hyperplane([0.0, 1.0], [1.0, 1.0])   # x + y = 1
+
+    intersection_bv = getIntersection(bv, plane)
+    expected_bv = BoundingVolume([0.0, 0.0], [1.0, 1.0])
+
+    @test intersection_bv == expected_bv
+end
+
+@testset "getIntersection(bv, plane): Plane intersects exactly on a boundary face" begin
+    bv = BoundingVolume([0.0, 0.0], [1.0, 1.0])
+    plane = Hyperplane([0.0, 0.0], [1.0, 0.0])   # x = 0
+
+    intersection_bv = getIntersection(bv, plane)
+    expected_bv = BoundingVolume([0.0, 0.0], [0.0, 1.0])
+
+    @test intersection_bv == expected_bv
+end
+
+@testset "getIntersection(bv, plane): Plane intersects only at a corner" begin
+    bv = BoundingVolume([0.0, 0.0], [1.0, 1.0])
+    plane = Hyperplane([0.0, 0.0], [1.0, 1.0])   # x + y = 0
+
+    intersection_bv = getIntersection(bv, plane)
+    expected_bv = BoundingVolume([0.0, 0.0], [0.0, 0.0])
+
+    @test intersection_bv == expected_bv
+end
+
+@testset "getIntersection(bv, plane): Lower-dimensional BV already contained in the plane" begin
+    bv = BoundingVolume([0.0, -1.0], [0.0, 1.0])   # segment x = 0
+    plane = Hyperplane([0.0, 0.0], [1.0, 0.0])     # x = 0
+
+    intersection_bv = getIntersection(bv, plane)
+    expected_bv = BoundingVolume([0.0, -1.0], [0.0, 1.0])
+
+    @test intersection_bv == expected_bv
+end
+
+@testset "getIntersection(bv, plane): 3D plane fixes one coordinate" begin
+    bv = BoundingVolume([0.0, 0.0, 0.0], [3.0, 4.0, 5.0])
+    plane = Hyperplane([0.0, 2.0, 0.0], [0.0, 1.0, 0.0])   # y = 2
+
+    intersection_bv = getIntersection(bv, plane)
+    expected_bv = BoundingVolume([0.0, 2.0, 0.0], [3.0, 2.0, 5.0])
+
+    @test intersection_bv == expected_bv
+end

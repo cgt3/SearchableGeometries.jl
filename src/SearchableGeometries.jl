@@ -9,12 +9,10 @@ export SearchableGeometry, Ball, BoundingVolume, Hyperplane
 export getClosestPoint, getFurthestPoint, faceIndex2SpatialIndex, getFaceBoundingVolume
 
 # General Functions:
-export isContained, intersects, getIntersection
+export isContained, intersects, getIntersection, tightenBVBounds!
 
 # Ball only Functions:
-export getReducedDimBall, tightenBVBounds!
-
-# Hyperplane only Functions:
+export getReducedDimBall
 
 import Base.getindex
 
@@ -521,7 +519,7 @@ function signedExtrema(bv::BoundingVolume, query_plane::Hyperplane)
         # If nd == 0, this coordinate does not affect the signed offset
     end
 
-    return smin, smax
+    return smin, smax # smin -> antifurthest point, smax -> furthest point in the direction of the normal n.
 end
 
 function intersects(bv::BoundingVolume, query_plane::Hyperplane; include_boundary::Bool=true, tol::Real=DEFAULT_BV_POINT_TOL)
@@ -545,6 +543,125 @@ function intersects(bv::BoundingVolume, query_plane::Hyperplane; include_boundar
         # The hyperplane intersects the bounding volume if 0 is in the open interval (smin, smax)
         return smin < -tol && smax > tol
     end
+end
+
+function tightenBVBounds!(bv::BoundingVolume, query_plane::Hyperplane; tol=DEFAULT_BV_POINT_TOL::Real)
+    # Empty BV: nothing to tighten
+    if bv.is_empty
+        return Int[], Int[]
+    end
+
+    # The BV and hyperplane must live in the same embedding space
+    if length(bv.lb) != query_plane.embedding_dim
+        throw("SearchableGeometries.Hyperplane: bounding volume dimension($(length(bv.lb))) does not match hyperplane embedding dimension($(query_plane.embedding_dim))")
+    end
+
+    # Plane equation: dot(n, x) = c0
+    T = promote_type(eltype(bv.lb), eltype(query_plane.point), eltype(query_plane.n), typeof(tol))
+    c0 = dot(query_plane.n, query_plane.point)
+
+    # Important:
+    # Compute all new bounds from the ORIGINAL box, not from bounds that
+    # are being updated as we loop. This avoids order-dependent tightening.
+    old_lb = T.(copy(bv.lb))
+    old_ub = T.(copy(bv.ub))
+    new_lb = copy(old_lb)
+    new_ub = copy(old_ub)
+
+    altered_lb_indices = Int[]
+    altered_ub_indices = Int[]
+
+    for i in eachindex(old_lb)
+        ni = query_plane.n[i]
+
+        # If the plane does not depend on coordinate i, then x_i is unconstrained.
+        # So we do not tighten in that direction.
+        if iszero(ni)
+            continue
+        end
+
+        # Compute the min/max possible contribution from all coordinates except i:
+        #
+        #   sum_{j != i} n_j x_j
+        #
+        # over the original BV.
+        rest_min = zero(T)
+        rest_max = zero(T)
+
+        for j in eachindex(old_lb)
+            j == i && continue
+
+            nj = query_plane.n[j]
+
+            if nj > 0
+                rest_min += nj * old_lb[j]
+                rest_max += nj * old_ub[j]
+            elseif nj < 0
+                rest_min += nj * old_ub[j]
+                rest_max += nj * old_lb[j]
+            end
+            # If nj == 0, coordinate j does not affect the plane equation
+        end
+
+        # We want values of x_i = t such that the plane equation is feasible:
+        #
+        #   n_i * t + sum_{j != i} n_j x_j = c0
+        #
+        # Since the remaining sum can vary in [rest_min, rest_max],
+        # t must lie in the corresponding feasible interval.
+        t1 = (c0 - rest_max) / ni
+        t2 = (c0 - rest_min) / ni
+
+        feasible_low = min(t1, t2)
+        feasible_high = max(t1, t2)
+
+        # Intersect that feasible interval with the current BV interval [lb_i, ub_i]
+        tightened_lb_i = max(old_lb[i], feasible_low)
+        tightened_ub_i = min(old_ub[i], feasible_high)
+
+        # If the BV really intersects the plane, this should not happen except
+        # for numerical noise. Allow tiny overlap errors by collapsing to a point.
+        if tightened_lb_i > tightened_ub_i + tol
+            throw("SearchableGeometries.Hyperplane: attempted to tighten a BoundingVolume that does not intersect the hyperplane")
+        elseif tightened_lb_i > tightened_ub_i
+            mid = (tightened_lb_i + tightened_ub_i) / 2
+            tightened_lb_i = mid
+            tightened_ub_i = mid
+        end
+
+        # Record which lower/upper bounds changed
+        if tightened_lb_i > old_lb[i] + tol
+            push!(altered_lb_indices, i)
+        end
+        if tightened_ub_i < old_ub[i] - tol
+            push!(altered_ub_indices, i)
+        end
+
+        new_lb[i] = tightened_lb_i
+        new_ub[i] = tightened_ub_i
+    end
+
+    # Mutate the BV bounds in place
+    bv.lb .= new_lb
+    bv.ub .= new_ub
+
+    return altered_lb_indices, altered_ub_indices
+end
+
+function getIntersection(bv::BoundingVolume, query_plane::Hyperplane; tol::Real=DEFAULT_BV_POINT_TOL)
+    # No intersection at all
+    if !intersects(bv, query_plane; include_boundary=true, tol=tol)
+        return BoundingVolume()
+    end
+
+    # Start from the full BV, then tighten each coordinate to the
+    # smallest interval that can still satisfy the plane equation.
+    intersection_bv = BoundingVolume(copy(bv.lb), copy(bv.ub); tol=tol)
+    tightenBVBounds!(intersection_bv, query_plane; tol=tol)
+
+    # Rebuild once so cached active/inactive metadata stays consistent
+    # if any coordinates collapsed to points.
+    return BoundingVolume(copy(intersection_bv.lb), copy(intersection_bv.ub); tol=tol)
 end
 
 end # module SearchableGeometries
