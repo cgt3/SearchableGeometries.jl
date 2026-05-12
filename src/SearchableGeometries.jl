@@ -490,7 +490,7 @@ function getClosestPoint(pt::Vector{<:Real}, query_plane::Hyperplane)
     return pt - dot(query_plane.n, pt - query_plane.point) * query_plane.n
 end
 
-function signedExtrema(bv::BoundingVolume, query_plane::Hyperplane)
+function signedExtrema(bv::BoundingVolume, query_plane::Hyperplane; return_points::Bool=false)
     # We study the signed offset function
     #     h(x) = dot(n, x - point)
     # over the whole BV. Since h is linear, its minimum and maximum
@@ -499,6 +499,10 @@ function signedExtrema(bv::BoundingVolume, query_plane::Hyperplane)
     smin = zero(T)
     smax = zero(T)
 
+    # xmin = lexicographically smallest point attaining smin
+    # xmax = lexicographically smallest point attaining smax
+    xmin = Vector{T}(undef, length(bv.lb))
+    xmax = Vector{T}(undef, length(bv.lb))
 
     for d in eachindex(bv.lb)
         nd = query_plane.n[d]
@@ -509,17 +513,30 @@ function signedExtrema(bv::BoundingVolume, query_plane::Hyperplane)
             # - Upper bound gives the maximum signed value.
             smin += nd * (bv.lb[d] - query_plane.point[d])
             smax += nd * (bv.ub[d] - query_plane.point[d])
+
+            xmin[d] = bv.lb[d]
+            xmax[d] = bv.ub[d]
+
         elseif nd < 0
             # Negative normal component:
             # - Lower bound gives the maximum signed value,
             # - Upper bound gives the minimum signed value.
             smin += nd * (bv.ub[d] - query_plane.point[d])
             smax += nd * (bv.lb[d] - query_plane.point[d])
-        end
-        # If nd == 0, this coordinate does not affect the signed offset
-    end
 
-    return smin, smax # smin -> antifurthest point, smax -> furthest point in the direction of the normal n.
+            xmin[d] = bv.ub[d]
+            xmax[d] = bv.lb[d]
+        else
+            # If nd == 0, this coordinate does not affect the signed offset
+            # To keep the tie-break deterministic, choose the
+            # lexicographically smallest value for both witnesses.
+            xmin[d] = bv.lb[d]
+            xmax[d] = bv.lb[d]
+        end
+    end
+    # smin -> signed distance of the BV point furthest along -n.
+    # smax -> signed distance of the BV point furthest along +n.
+    return return_points ? (smin, smax, xmin, xmax) : (smin, smax)
 end
 
 function intersects(bv::BoundingVolume, query_plane::Hyperplane; include_boundary::Bool=true, tol::Real=DEFAULT_BV_POINT_TOL)
@@ -534,7 +551,7 @@ function intersects(bv::BoundingVolume, query_plane::Hyperplane; include_boundar
     end
 
     # Compute the minimum and maximum signed offsets over the BV
-    smin, smax = signedExtrema(bv, query_plane)
+    smin, smax = signedExtrema(bv, query_plane; return_points=false)
 
     if include_boundary
         # The hyperplane intersects the bounding volume if 0 is in the interval [smin, smax]
@@ -662,6 +679,262 @@ function getIntersection(bv::BoundingVolume, query_plane::Hyperplane; tol::Real=
     # Rebuild once so cached active/inactive metadata stays consistent
     # if any coordinates collapsed to points.
     return BoundingVolume(copy(intersection_bv.lb), copy(intersection_bv.ub); tol=tol)
+end
+
+function getClosestPoint(bv::BoundingVolume, query_plane::Hyperplane; tol=DEFAULT_BV_POINT_TOL::Real)
+    # If the bounding volume is empty, you cannot find a closest point
+    if bv.is_empty
+        throw("SearchableGeometries.Hyperplane: cannot compute closest point of an empty BoundingVolume")
+    end
+
+    # The dimension of the bounding volume and the hyperplane must match
+    if length(bv.lb) != query_plane.embedding_dim
+        throw("SearchableGeometries.Hyperplane: bounding volume dimension($(length(bv.lb))) does not match hyperplane embedding dimension($(query_plane.embedding_dim))")
+    end
+
+    # Compute the minimum and maximum signed offsets over the BV
+    smin, smax, xmin, xmax = signedExtrema(bv, query_plane; return_points=true)
+
+    # Case 1: the BV intersects the plane.
+    # Then the closest distance is 0, so we return the lexicographically
+    # smallest point in BV ∩ plane.
+    if smin <= tol && smax >= -tol # intersects(bv, query_plane; include_boundary=true, tol=tol)
+        T = promote_type(eltype(bv.lb), eltype(query_plane.point), eltype(query_plane.n), typeof(tol))
+        closest_pt = Vector{T}(undef, length(bv.lb))
+
+        # Plane equation: dot(n, x) = c
+        c = dot(query_plane.n, query_plane.point)
+
+        # Contribution from coordinates that have already been fixed
+        prefix_sum = zero(T)
+
+        for j in eachindex(bv.lb)
+            nj = query_plane.n[j]
+
+            # Compute the smallest and largest possible contribution
+            # from the remaining coordinates j+1, ..., end
+            rem_min = zero(T)
+            rem_max = zero(T)
+
+            for k in (j+1):length(bv.lb)
+                nk = query_plane.n[k]
+
+                if nk > 0
+                    rem_min += nk * bv.lb[k]
+                    rem_max += nk * bv.ub[k]
+                elseif nk < 0
+                    rem_min += nk * bv.ub[k]
+                    rem_max += nk * bv.lb[k]
+                end
+                # If nk == 0, coordinate k does not affect the plane equation
+            end
+
+            if iszero(nj)
+                # This coordinate does not affect the plane equation.
+                # To get the lexicographically smallest feasible point,
+                # choose the smallest allowed value.
+                closest_pt[j] = bv.lb[j]
+            else
+                # Need:
+                #   prefix_sum + nj*x[j] + remaining_contribution = c
+                #
+                # Since remaining_contribution can vary in [rem_min, rem_max],
+                # this gives a feasible interval for x[j].
+                rhs_low = c - prefix_sum - rem_max
+                rhs_high = c - prefix_sum - rem_min
+
+                t1 = rhs_low / nj
+                t2 = rhs_high / nj
+
+                feasible_low = max(bv.lb[j], min(t1, t2))
+                feasible_high = min(bv.ub[j], max(t1, t2))
+
+                if feasible_low > feasible_high + tol
+                    throw("SearchableGeometries.Hyperplane: failed to construct a feasible closest point in the BV-plane intersection")
+                end
+
+                # Lexicographically smallest feasible choice
+                closest_pt[j] = feasible_low
+            end
+
+            prefix_sum += nj * closest_pt[j]
+        end
+
+        return closest_pt
+    end
+
+    # Case 2: BV is entirely on the positive side of the plane.
+    # Then the closest point is the point minimizing the signed offset.
+    if smin > tol
+        return xmin
+    end
+
+    # Case 3: BV is entirely on the negative side of the plane.
+    # Then the closest point is the point maximizing the signed offset.
+    return xmax
+end
+
+function getFurthestPoint(bv::BoundingVolume, query_plane::Hyperplane; tol=DEFAULT_BV_POINT_TOL::Real)
+    # If the bounding volume is empty, you cannot find a furthest point
+    if bv.is_empty
+        throw("SearchableGeometries.Hyperplane: cannot compute furthest point of an empty BoundingVolume")
+    end
+
+    # The dimension of the bounding volume and the hyperplane must match
+    if length(bv.lb) != query_plane.embedding_dim
+        throw("SearchableGeometries.Hyperplane: bounding volume dimension($(length(bv.lb))) does not match hyperplane embedding dimension($(query_plane.embedding_dim))")
+    end
+
+    # Compute the minimum and maximum signed offsets over the BV
+    smin, smax, xmin, xmax = signedExtrema(bv, query_plane; return_points=true)
+
+    # If one side is strictly farther, return its witness
+    if abs(smin) > abs(smax) + tol
+        return xmin
+    elseif abs(smax) > abs(smin) + tol
+        return xmax
+    end
+
+    # Tie case: both are equally far from the plane.
+    # Break ties lexicographically inside this function.
+    for i in eachindex(xmin)
+        if xmin[i] < xmax[i] - tol
+            return xmin
+        elseif xmin[i] > xmax[i] + tol
+            return xmax
+        end
+    end
+
+    # Equal up to tolerance: either is fine
+    return xmin
+end
+
+
+# Lines --------------------------------------------------------------------------------
+struct Line
+    dir::Vector
+    source::Vector
+
+    function Line(dir::Vector, source::Vector)
+        if length(dir) != length(source)
+            throw("SearchableGeometries.Line: direction vector and source point dimension must match")
+        end
+
+        return new(dir ./ norm(dir), source)
+    end
+end
+
+function (::Line)(s::Real)
+    return source + dir * s
+end
+
+
+# Cones --------------------------------------------------------------------------------
+struct Cone <: SearchableGeometry
+    vertex::Vector
+    axis::Vector
+    slope::Real
+
+    function Cone(vertex::Vector, axis::Vector, slope::Real)
+        if length(vertex) != length(axis)
+            throw("SearchableGeometries.Cone: Vertex and axis vector do not have the same dimensions (dim(vertex)=$(length(vertex)), dim(axis)=$(length(axis))")
+        elseif slope < zero(slope)
+            throw("SearchableGeometries.Cone: Cannot construct cone with negative slope.")
+        end
+
+        return new(vertex, axis ./ norm(axis), slope)
+    end
+end
+
+import Base.==
+function Base.:(==)(cone1::Cone, cone2::Cone; tol=DEFAULT_BV_POINT_TOL::Real)
+    return all(cone1.vertex .== cone2.vertex) &&
+           all(cone1.axis .== cone2.axis) &&
+           cone1.slope == cone2.slope
+end
+
+function getMajorRadius(cone::Cone, p::Vector)
+    return (cone.vertex .- p)' * cone.axis
+end
+
+function getRadii(cone::Cone, p::Vector)
+    dist2Vertex = cone.vertex .- p
+    R = dist2Vertex' * cone.axis
+    r = norm(dist2Vertex .- R * cone.axis)
+    return R, r
+end
+
+# TODO: this functions is not guaranteed to have a unique output; provide a means to break ties
+function getClosestPoint(bv::BoundingVolume, query_line::Line)
+    # TODO: Finish
+end
+
+# TODO: this functions is not guaranteed to have a unique output; provide a means to break ties
+function getClosestPoint(cone::Cone, query_line::Line)
+    # TODO: Finish
+end
+
+# TODO: this functions is not guaranteed to have a unique output; provide a means to break ties
+function getFurthestPoint(cone::Cone, query_line::Line)
+    # TODO: Finish
+end
+
+function getConeBounds(cone::Cone)
+    if cone.slope == 0
+        return Line(cone.vertex, cone.axis)
+    end
+
+    ub_scalings = similar(cone.vertex)
+    lb_scalings = similar(cone.vertex)
+    e_i = spzeros(length(cone.vertex))
+
+    for i in eachindex(cone.vertex)
+        e_i[i] = 1
+        if abs(e_i' * cone.axis) == 1
+            lb_scalings[i] = 0.0
+            ub_scalings[i] = 0.0
+        else
+            u0 = cone.vertex + e_i
+            R0, r = getRadii(cone, u0)
+
+            R_bound = r / cone.slope
+            u_ub_i = u0[i] + (R_bound - R0) * cone.axis[i]
+            u_lb_i = (cone.vertex-e_i)[i] + (R_bound - R0) * cone.axis[i]
+
+            ub_scalings[i] = (u_ub_i - cone.vertex[i]) / R_bound
+            lb_scalings[i] = (u_lb_i - cone.vertex[i]) / R_bound
+        end
+    end
+
+    return Line(cone.vertex, lb_scalings), Line(cone.vertex, ub_scalings)
+end
+
+function getBoundingRadii(cone::Cone, query_bv::BoundingVolume)
+    closest_R_pt = getClosestPoint(query_bv, Hyperplane(cone.vertex, cone.axis))
+    furthest_R_pt = getFurthestPoint(query_bv, Hyperplane(cone.vertex, cone.axis))
+    return getMajorRadius(cone, closest_R_pt), getMajorRadius(cone, furthest_R_pt)
+end
+
+function BoundingVolume(ub_func, lb_func, s1::Real, s2::Real; tol=DEFAULT_BV_POINT_TOL::Real)
+    lb1 = lb_func(s1)
+    ub1 = ub_func(s1)
+
+    lb2 = lb_func(s2)
+    ub2 = ub_func(s2)
+
+    return BoundingVolume(ub1, lb1, ub2, lb2, tol=tol)
+end
+
+function BoundingVolume(cone::Cone; R_max::Real, R_min::Real=zero(cone.slope), tol=DEFAULT_BV_POINT_TOL::Real)
+    if R_max < R_min
+        throw("SearchableGeometries.BoundingVolume: R_max must be greater than or equal to R_min")
+    end
+
+    if R_min < 0
+        throw("SearchableGeometries.BoundingVolume: R_min and R_max do not satisfy 0 <= R_min <= R_max")
+    end
+
+    return BoundingVolume(cone_ub, cone_lb, R_max, R_min, tol=tol)
 end
 
 end # module SearchableGeometries
