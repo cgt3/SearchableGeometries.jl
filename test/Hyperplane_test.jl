@@ -60,108 +60,108 @@ end
 end
 
 # Hyperplane -> Points ----------------------------------------------------------
-# `isContained(plane, query_pt)` ------------------------------------------------
-@testset "isContained(plane, query_pt): Point dimension must match hyperplane embedding dimension" begin
+# `is_contained(plane, query_pt)` ------------------------------------------------
+@testset "is_contained(plane, query_pt): Point dimension must match hyperplane embedding dimension" begin
     plane = Hyperplane([0.0, 0.0, 0.0], [1.0, 0.0, 0.0])
 
-    @test_throws "point dimension(2) does not match hyperplane embedding dimension(3)" isContained(plane, [0.0, 0.0])
-    @test_throws "point dimension(4) does not match hyperplane embedding dimension(3)" isContained(plane, [0.0, 0.0, 0.0, 0.0])
+    @test_throws "point dimension(2) does not match hyperplane embedding dimension(3)" is_contained(plane, [0.0, 0.0])
+    @test_throws "point dimension(4) does not match hyperplane embedding dimension(3)" is_contained(plane, [0.0, 0.0, 0.0, 0.0])
 end
 
-@testset "isContained(plane, query_pt): Point exactly on the hyperplane" begin
+@testset "is_contained(plane, query_pt): Point exactly on the hyperplane" begin
     plane = Hyperplane([0.0, 0.0], [1.0, 1.0])
 
     query_pt1 = [1.0, -1.0]
-    @test isContained(plane, query_pt1)
+    @test is_contained(plane, query_pt1)
 
     query_pt2 = [2.5, -2.5]
-    @test isContained(plane, query_pt2)
+    @test is_contained(plane, query_pt2)
 
     query_pt3 = [0.0, 0.0]
-    @test isContained(plane, query_pt3)
+    @test is_contained(plane, query_pt3)
 end
 
-@testset "isContained(plane, query_pt): Point not on the hyperplane" begin
+@testset "is_contained(plane, query_pt): Point not on the hyperplane" begin
     plane = Hyperplane([0.0, 0.0], [1.0, 1.0])
 
     query_pt1 = [1.0, 0.0]
-    @test !isContained(plane, query_pt1)
+    @test !is_contained(plane, query_pt1)
 
     query_pt2 = [0.0, 1.0]
-    @test !isContained(plane, query_pt2)
+    @test !is_contained(plane, query_pt2)
 
     query_pt3 = [2.0, -1.0]
-    @test !isContained(plane, query_pt3)
+    @test !is_contained(plane, query_pt3)
 end
 
-@testset "isContained(plane, query_pt): Hyperplane with inactive dimensions" begin
+@testset "is_contained(plane, query_pt): Hyperplane with inactive dimensions" begin
     plane = Hyperplane([1.0, 2.0, 3.0], [0.0, 1.0, 0.0])
 
     query_pt1 = [10.0, 2.0, -7.0]
-    @test isContained(plane, query_pt1)
+    @test is_contained(plane, query_pt1)
 
     query_pt2 = [1.0, 2.0, 3.0]
-    @test isContained(plane, query_pt2)
+    @test is_contained(plane, query_pt2)
 
     query_pt3 = [10.0, 2.5, -7.0]
-    @test !isContained(plane, query_pt3)
+    @test !is_contained(plane, query_pt3)
 end
 
-# `getClosestPoint(pt, plane)` ------------------------------------------------
-@testset "getClosestPoint(pt, plane): Point dimension must match hyperplane embedding dimension" begin
+# `get_closest_point(pt, plane)` ------------------------------------------------
+@testset "get_closest_point(pt, plane): Point dimension must match hyperplane embedding dimension" begin
     plane = Hyperplane([0.0, 0.0, 0.0], [1.0, 0.0, 0.0])
 
-    @test_throws "SearchableGeometries.Hyperplane: point dimension(2) does not match hyperplane embedding dimension(3)" getClosestPoint([0.0, 0.0], plane)
-    @test_throws "SearchableGeometries.Hyperplane: point dimension(4) does not match hyperplane embedding dimension(3)" getClosestPoint([0.0, 0.0, 0.0, 0.0], plane)
+    @test_throws "SearchableGeometries.Hyperplane: point dimension(2) does not match hyperplane embedding dimension(3)" get_closest_point([0.0, 0.0], plane)
+    @test_throws "SearchableGeometries.Hyperplane: point dimension(4) does not match hyperplane embedding dimension(3)" get_closest_point([0.0, 0.0, 0.0, 0.0], plane)
 end
 
-@testset "getClosestPoint(pt, plane): point already on the hyperplane" begin
+@testset "get_closest_point(pt, plane): point already on the hyperplane" begin
     plane = Hyperplane([0.0, 0.0], [1.0, 0.0])  # x = 0
     pt = [0.0, 2.0]
 
-    closest_pt = getClosestPoint(pt, plane)
+    closest_pt = get_closest_point(pt, plane)
     @test isapprox(closest_pt, [0.0, 2.0])
-    @test isContained(plane, closest_pt)
+    @test is_contained(plane, closest_pt)
 end
 
-@testset "getClosestPoint(pt, plane): point in front of plane" begin
+@testset "get_closest_point(pt, plane): point in front of plane" begin
     plane = Hyperplane([0.0, 0.0], [1.0, 0.0])  # x = 0
     pt = [3.0, 2.0]
 
-    closest_pt = getClosestPoint(pt, plane)
+    closest_pt = get_closest_point(pt, plane)
     @test isapprox(closest_pt, [0.0, 2.0])
-    @test isContained(plane, closest_pt)
+    @test is_contained(plane, closest_pt)
 end
 
-@testset "getClosestPoint(pt, plane): point behind plane" begin
+@testset "get_closest_point(pt, plane): point behind plane" begin
     plane = Hyperplane([0.0, 0.0], [1.0, 0.0])  # x = 0
     pt = [-3.0, 2.0]
 
-    closest_pt = getClosestPoint(pt, plane)
+    closest_pt = get_closest_point(pt, plane)
 
     @test isapprox(closest_pt, [0.0, 2.0])
-    @test isContained(plane, closest_pt)
+    @test is_contained(plane, closest_pt)
 end
 
-@testset "getClosestPoint(pt, plane): slanted plane" begin
+@testset "get_closest_point(pt, plane): slanted plane" begin
     # Plane x - y = 0, or y = x.
     plane = Hyperplane([0.0, 0.0], [1.0, -1.0])
     pt = [2.0, 0.0]
 
-    closest_pt = getClosestPoint(pt, plane)
+    closest_pt = get_closest_point(pt, plane)
 
     @test isapprox(closest_pt, [1.0, 1.0])
-    @test isContained(plane, closest_pt)
+    @test is_contained(plane, closest_pt)
 end
 
-@testset "getClosestPoint(pt, plane): higher dimension" begin
+@testset "get_closest_point(pt, plane): higher dimension" begin
     plane = Hyperplane([0.0, 0.0, 0.0], [0.0, 0.0, 1.0])  # z = 0
     pt = [1.0, 2.0, 5.0]
 
-    closest_pt = getClosestPoint(pt, plane)
+    closest_pt = get_closest_point(pt, plane)
 
     @test all(closest_pt .== [1.0, 2.0, 0.0])
-    @test isContained(plane, closest_pt)
+    @test is_contained(plane, closest_pt)
 end
 
 # Hyperplane -> BVs --------------------------------------------------------------
@@ -213,79 +213,79 @@ end
     @test !intersects(bv, plane; include_boundary=false)
 end
 
-# getIntersection -----------------------------------------------------------------
-@testset "getIntersection(bv, plane): No intersection returns an empty BoundingVolume" begin
+# get_intersection -----------------------------------------------------------------
+@testset "get_intersection(bv, plane): No intersection returns an empty BoundingVolume" begin
     bv = BoundingVolume([0.0, 0.0], [1.0, 1.0])
     plane = Hyperplane([2.0, 0.0], [1.0, 0.0])   # x = 2
 
-    intersection_bv = getIntersection(bv, plane)
+    intersection_bv = get_intersection(bv, plane)
 
     @test intersection_bv == BoundingVolume()
 end
 
-@testset "getIntersection(bv, plane): Plane cuts through 2D BV interior" begin
+@testset "get_intersection(bv, plane): Plane cuts through 2D BV interior" begin
     bv = BoundingVolume([0.0, 0.0], [2.0, 2.0])
     plane = Hyperplane([0.0, 1.0], [1.0, 1.0])   # x + y = 1
 
-    intersection_bv = getIntersection(bv, plane)
+    intersection_bv = get_intersection(bv, plane)
     expected_bv = BoundingVolume([0.0, 0.0], [1.0, 1.0])
 
     @test intersection_bv == expected_bv
 end
 
-@testset "getIntersection(bv, plane): Plane intersects exactly on a boundary face" begin
+@testset "get_intersection(bv, plane): Plane intersects exactly on a boundary face" begin
     bv = BoundingVolume([0.0, 0.0], [1.0, 1.0])
     plane = Hyperplane([0.0, 0.0], [1.0, 0.0])   # x = 0
 
-    intersection_bv = getIntersection(bv, plane)
+    intersection_bv = get_intersection(bv, plane)
     expected_bv = BoundingVolume([0.0, 0.0], [0.0, 1.0])
 
     @test intersection_bv == expected_bv
 end
 
-@testset "getIntersection(bv, plane): Plane intersects only at a corner" begin
+@testset "get_intersection(bv, plane): Plane intersects only at a corner" begin
     bv = BoundingVolume([0.0, 0.0], [1.0, 1.0])
     plane = Hyperplane([0.0, 0.0], [1.0, 1.0])   # x + y = 0
 
-    intersection_bv = getIntersection(bv, plane)
+    intersection_bv = get_intersection(bv, plane)
     expected_bv = BoundingVolume([0.0, 0.0], [0.0, 0.0])
 
     @test intersection_bv == expected_bv
 end
 
-@testset "getIntersection(bv, plane): Lower-dimensional BV already contained in the plane" begin
+@testset "get_intersection(bv, plane): Lower-dimensional BV already contained in the plane" begin
     bv = BoundingVolume([0.0, -1.0], [0.0, 1.0])   # segment x = 0
     plane = Hyperplane([0.0, 0.0], [1.0, 0.0])     # x = 0
 
-    intersection_bv = getIntersection(bv, plane)
+    intersection_bv = get_intersection(bv, plane)
     expected_bv = BoundingVolume([0.0, -1.0], [0.0, 1.0])
 
     @test intersection_bv == expected_bv
 end
 
-@testset "getIntersection(bv, plane): 3D plane fixes one coordinate" begin
+@testset "get_intersection(bv, plane): 3D plane fixes one coordinate" begin
     bv = BoundingVolume([0.0, 0.0, 0.0], [3.0, 4.0, 5.0])
     plane = Hyperplane([0.0, 2.0, 0.0], [0.0, 1.0, 0.0])   # y = 2
 
-    intersection_bv = getIntersection(bv, plane)
+    intersection_bv = get_intersection(bv, plane)
     expected_bv = BoundingVolume([0.0, 2.0, 0.0], [3.0, 2.0, 5.0])
 
     @test intersection_bv == expected_bv
 end
 
-# `getClosestPoint(bv, plane)` ------------------------------------------------
-@testset "getClosestPoint(bv, plane): Dimension mismatch throws" begin
+# `get_closest_point(bv, plane)` ------------------------------------------------
+@testset "get_closest_point(bv, plane): Dimension mismatch throws" begin
     bv = BoundingVolume([0.0, 0.0], [1.0, 1.0])
     plane = Hyperplane([0.0, 0.0, 0.0], [1.0, 0.0, 0.0])
 
-    @test_throws "SearchableGeometries.Hyperplane: bounding volume dimension(2) does not match hyperplane embedding dimension(3)" getClosestPoint(bv, plane)
+    @test_throws "SearchableGeometries.Hyperplane: bounding volume dimension(2) does not match hyperplane embedding dimension(3)" get_closest_point(bv, plane)
 end
 
-@testset "getClosestPoint(bv, plane): BV completely on the positive side of the plane" begin
+@testset "get_closest_point(bv, plane): BV completely on the positive side of the plane" begin
     bv = BoundingVolume([2.0, -1.0], [3.0, 4.0])
     plane = Hyperplane([0.0, 0.0], [1.0, 0.0])   # plane x = 0
 
-    closest_pt = getClosestPoint(bv, plane)
+    closest_pt = get_closest_point(bv, plane)
 
     # The whole BV is to the right of x = 0, so the closest face is x = 2.
     # Among all points on that face, we choose the lexicographically smallest one.
@@ -293,11 +293,11 @@ end
     @test isapprox(abs(dot(plane.n, closest_pt - plane.point)), 2.0; atol=1e-12)
 end
 
-@testset "getClosestPoint(bv, plane): BV completely on the negative side of the plane" begin
+@testset "get_closest_point(bv, plane): BV completely on the negative side of the plane" begin
     bv = BoundingVolume([0.0, -1.0], [1.0, 4.0])
     plane = Hyperplane([2.0, 0.0], [1.0, 0.0])   # plane x = 2
 
-    closest_pt = getClosestPoint(bv, plane)
+    closest_pt = get_closest_point(bv, plane)
 
     # The whole BV is to the left of x = 2, so the closest face is x = 1.
     # Among all points on that face, we choose the lexicographically smallest one.
@@ -305,116 +305,116 @@ end
     @test isapprox(abs(dot(plane.n, closest_pt - plane.point)), 1.0; atol=1e-12)
 end
 
-@testset "getClosestPoint(bv, plane): Lower-dimensional BV lying on the plane" begin
+@testset "get_closest_point(bv, plane): Lower-dimensional BV lying on the plane" begin
     bv = BoundingVolume([0.0, -1.0], [0.0, 1.0])   # segment x = 0
     plane = Hyperplane([0.0, 0.0], [1.0, 0.0])     # plane x = 0
 
-    closest_pt = getClosestPoint(bv, plane)
+    closest_pt = get_closest_point(bv, plane)
 
     # Every point of the segment lies on the plane.
     # The lexicographically smallest point is (0,-1).
     @test closest_pt == [0.0, -1.0]
-    @test isContained(plane, closest_pt)
+    @test is_contained(plane, closest_pt)
 end
 
-@testset "getClosestPoint(bv, plane): Plane with inactive dimensions in the normal" begin
+@testset "get_closest_point(bv, plane): Plane with inactive dimensions in the normal" begin
     bv = BoundingVolume([0.0, 0.0, 0.0], [3.0, 4.0, 5.0])
     plane = Hyperplane([0.0, 2.0, 0.0], [0.0, 1.0, 0.0])   # plane y = 2
 
-    closest_pt = getClosestPoint(bv, plane)
+    closest_pt = get_closest_point(bv, plane)
 
     # The intersection is all points with y = 2 inside the box.
     # The lexicographically smallest such point is (0,2,0).
     @test closest_pt == [0.0, 2.0, 0.0]
-    @test isContained(plane, closest_pt)
+    @test is_contained(plane, closest_pt)
 end
 
-@testset "getClosestPoint(bv, plane): Boundary-only intersection" begin
+@testset "get_closest_point(bv, plane): Boundary-only intersection" begin
     bv = BoundingVolume([0.0, 0.0], [1.0, 1.0])
     plane = Hyperplane([0.0, 0.0], [1.0, 0.0])   # plane x = 0
 
-    closest_pt = getClosestPoint(bv, plane)
+    closest_pt = get_closest_point(bv, plane)
 
     # The plane meets the BV on the left face x = 0.
     # Lexicographically smallest point on that face is (0,0).
     @test closest_pt == [0.0, 0.0]
-    @test isContained(plane, closest_pt)
+    @test is_contained(plane, closest_pt)
 end
 
-@testset "getClosestPoint(bv, plane): Corner-only intersection" begin
+@testset "get_closest_point(bv, plane): Corner-only intersection" begin
     bv = BoundingVolume([0.0, 0.0], [1.0, 1.0])
     plane = Hyperplane([0.0, 0.0], [1.0, 1.0])   # plane x + y = 0
 
-    closest_pt = getClosestPoint(bv, plane)
+    closest_pt = get_closest_point(bv, plane)
 
     # The only intersection point is the corner (0,0).
     @test closest_pt == [0.0, 0.0]
-    @test isContained(plane, closest_pt)
+    @test is_contained(plane, closest_pt)
 end
 
-# `getFurthestPoint(bv, plane)` ------------------------------------------------
-@testset "getFurthestPoint(bv, plane): Dimension mismatch throws" begin
+# `get_furthest_point(bv, plane)` ------------------------------------------------
+@testset "get_furthest_point(bv, plane): Dimension mismatch throws" begin
     bv = BoundingVolume([0.0, 0.0], [1.0, 1.0])
     plane = Hyperplane([0.0, 0.0, 0.0], [1.0, 0.0, 0.0])
 
-    @test_throws "SearchableGeometries.Hyperplane: bounding volume dimension(2) does not match hyperplane embedding dimension(3)" getFurthestPoint(bv, plane)
+    @test_throws "SearchableGeometries.Hyperplane: bounding volume dimension(2) does not match hyperplane embedding dimension(3)" get_furthest_point(bv, plane)
 end
 
-@testset "getFurthestPoint(bv, plane): BV completely on the positive side of the plane" begin
+@testset "get_furthest_point(bv, plane): BV completely on the positive side of the plane" begin
     bv = BoundingVolume([2.0, -1.0], [3.0, 4.0])
     plane = Hyperplane([0.0, 0.0], [1.0, 0.0])   # plane x = 0
 
-    furthest_pt = getFurthestPoint(bv, plane)
+    furthest_pt = get_furthest_point(bv, plane)
 
     @test furthest_pt == [3.0, -1.0]
     @test isapprox(abs(dot(plane.n, furthest_pt - plane.point)), 3.0; atol=1e-12)
 end
 
-@testset "getFurthestPoint(bv, plane): BV completely on the negative side of the plane" begin
+@testset "get_furthest_point(bv, plane): BV completely on the negative side of the plane" begin
     bv = BoundingVolume([0.0, -1.0], [1.0, 4.0])
     plane = Hyperplane([2.0, 0.0], [1.0, 0.0])   # plane x = 2
 
-    furthest_pt = getFurthestPoint(bv, plane)
+    furthest_pt = get_furthest_point(bv, plane)
 
     @test furthest_pt == [0.0, -1.0]
     @test isapprox(abs(dot(plane.n, furthest_pt - plane.point)), 2.0; atol=1e-12)
 end
 
-@testset "getFurthestPoint(bv, plane): Lower-dimensional BV lying on the plane" begin
+@testset "get_furthest_point(bv, plane): Lower-dimensional BV lying on the plane" begin
     bv = BoundingVolume([0.0, -1.0], [0.0, 1.0])   # segment x = 0
     plane = Hyperplane([0.0, 0.0], [1.0, 0.0])     # plane x = 0
 
-    furthest_pt = getFurthestPoint(bv, plane)
+    furthest_pt = get_furthest_point(bv, plane)
 
     @test furthest_pt == [0.0, -1.0]
-    @test isContained(plane, furthest_pt)
+    @test is_contained(plane, furthest_pt)
 end
 
-@testset "getFurthestPoint(bv, plane): Plane with inactive dimensions in the normal" begin
+@testset "get_furthest_point(bv, plane): Plane with inactive dimensions in the normal" begin
     bv = BoundingVolume([0.0, 0.0, 0.0], [3.0, 4.0, 5.0])
     plane = Hyperplane([0.0, 2.0, 0.0], [0.0, 1.0, 0.0])   # plane y = 2
 
-    furthest_pt = getFurthestPoint(bv, plane)
+    furthest_pt = get_furthest_point(bv, plane)
 
     @test furthest_pt == [0.0, 0.0, 0.0]
     @test isapprox(abs(dot(plane.n, furthest_pt - plane.point)), 2.0; atol=1e-12)
 end
 
-@testset "getFurthestPoint(bv, plane): Boundary-only intersection" begin
+@testset "get_furthest_point(bv, plane): Boundary-only intersection" begin
     bv = BoundingVolume([0.0, 0.0], [1.0, 1.0])
     plane = Hyperplane([0.0, 0.0], [1.0, 0.0])   # plane x = 0
 
-    furthest_pt = getFurthestPoint(bv, plane)
+    furthest_pt = get_furthest_point(bv, plane)
 
     @test furthest_pt == [1.0, 0.0]
     @test isapprox(abs(dot(plane.n, furthest_pt - plane.point)), 1.0; atol=1e-12)
 end
 
-@testset "getFurthestPoint(bv, plane): Corner-only intersection" begin
+@testset "get_furthest_point(bv, plane): Corner-only intersection" begin
     bv = BoundingVolume([0.0, 0.0], [1.0, 1.0])
     plane = Hyperplane([0.0, 0.0], [1.0, 1.0])   # plane x + y = 0
 
-    furthest_pt = getFurthestPoint(bv, plane)
+    furthest_pt = get_furthest_point(bv, plane)
 
     @test furthest_pt == [1.0, 1.0]
     @test isapprox(abs(dot(plane.n, furthest_pt - plane.point)), sqrt(2); atol=1e-12)

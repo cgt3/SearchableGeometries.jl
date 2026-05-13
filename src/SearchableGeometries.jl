@@ -6,13 +6,13 @@ using LinearAlgebra
 export SearchableGeometry, Ball, BoundingVolume, Hyperplane
 
 # BV only Functions:
-export getClosestPoint, getFurthestPoint, faceIndex2SpatialIndex, getFaceBoundingVolume
+export get_closest_point, get_furthest_point, face_index_to_spatial_index, get_face_bounding_volume
 
 # General Functions:
-export isContained, intersects, getIntersection, tightenBVBounds!
+export is_contained, intersects, get_intersection, tighten_bv_bounds!
 
 # Ball only Functions:
-export getReducedDimBall
+export get_reduced_dim_ball
 
 import Base.getindex
 
@@ -103,7 +103,7 @@ function Base.:(==)(bv1::BoundingVolume, bv2::BoundingVolume)
            all(bv1.is_active .== bv2.is_active)
 end
 
-function getClosestPoint(bv::BoundingVolume, query_pt::Vector{<:Real})
+function get_closest_point(bv::BoundingVolume, query_pt::Vector{<:Real})
     closest_pt = copy(query_pt)
 
     I_lb = query_pt .< bv.lb
@@ -115,7 +115,7 @@ function getClosestPoint(bv::BoundingVolume, query_pt::Vector{<:Real})
     return closest_pt
 end
 
-function getFurthestPoint(bv::BoundingVolume, query_pt::Vector{<:Real})
+function get_furthest_point(bv::BoundingVolume, query_pt::Vector{<:Real})
     furthest_pt = similar(query_pt)
 
     ub_is_closer = 0.5 * (bv.ub + bv.lb) .<= query_pt
@@ -127,7 +127,7 @@ function getFurthestPoint(bv::BoundingVolume, query_pt::Vector{<:Real})
     return furthest_pt
 end
 
-function isContained(bv::BoundingVolume, query_pt::Vector{<:Real}; include_boundary::Bool=true)
+function is_contained(bv::BoundingVolume, query_pt::Vector{<:Real}; include_boundary::Bool=true)
     if (include_boundary && all(bv.lb .<= query_pt .<= bv.ub)) ||
        (!include_boundary && all(bv.lb .< query_pt .< bv.ub))
         return true
@@ -136,7 +136,7 @@ function isContained(bv::BoundingVolume, query_pt::Vector{<:Real}; include_bound
     end
 end
 
-function isContained(bv::BoundingVolume, query_bv::BoundingVolume; include_boundary::Bool=true)
+function is_contained(bv::BoundingVolume, query_bv::BoundingVolume; include_boundary::Bool=true)
     if (!include_boundary && (all(query_bv.ub .< bv.ub) && all(query_bv.lb .> bv.lb))) ||
        (include_boundary && (all(query_bv.ub .<= bv.ub) && all(query_bv.lb .>= bv.lb)))
         return true
@@ -154,7 +154,7 @@ function intersects(bv1::BoundingVolume, bv2::BoundingVolume; include_boundary::
     end
 end
 
-function getIntersection(bv1::BoundingVolume, bv2::BoundingVolume; tol::Real=DEFAULT_BV_POINT_TOL)
+function get_intersection(bv1::BoundingVolume, bv2::BoundingVolume; tol::Real=DEFAULT_BV_POINT_TOL)
     if bv1.is_empty || bv2.is_empty
         return BoundingVolume()
     end
@@ -168,11 +168,11 @@ function getIntersection(bv1::BoundingVolume, bv2::BoundingVolume; tol::Real=DEF
     return BoundingVolume(new_lb, new_ub; tol=tol)
 end
 
-function faceIndex2SpatialIndex(face_index::Integer, num_dim::Integer)
+function face_index_to_spatial_index(face_index::Integer, num_dim::Integer)
     return face_index <= num_dim ? face_index : face_index - num_dim
 end
 
-function getFaceBoundingVolume(face_index::Integer, bv::BoundingVolume; tol::Real=DEFAULT_BV_POINT_TOL)
+function get_face_bounding_volume(face_index::Integer, bv::BoundingVolume; tol::Real=DEFAULT_BV_POINT_TOL)
     face_lb, face_ub = copy(bv.lb), copy(bv.ub)
 
     if face_index <= length(bv.lb) # Lower bound face
@@ -274,7 +274,7 @@ function BoundingVolume(ball::Ball; tol::Real=DEFAULT_BV_POINT_TOL)
     return BoundingVolume(lb, ub; tol=tol)
 end
 
-function isContained(ball::Ball, query_pt::Vector{<:Real}; include_boundary::Bool=true, tol::Real=DEFAULT_BV_POINT_TOL)
+function is_contained(ball::Ball, query_pt::Vector{<:Real}; include_boundary::Bool=true, tol::Real=DEFAULT_BV_POINT_TOL)
     if length(query_pt) != ball.embedding_dim
         throw("Point dimension($(length(query_pt))) does not match ball embedding dimension($(ball.embedding_dim))")
     end
@@ -293,13 +293,13 @@ function isContained(ball::Ball, query_pt::Vector{<:Real}; include_boundary::Boo
     return include_boundary ? R_query <= ball.radius : R_query < ball.radius
 end
 
-function isContained(bv::BoundingVolume, query_ball::Ball; include_boundary::Bool=true, tol::Real=DEFAULT_BV_POINT_TOL)
-    return isContained(bv, BoundingVolume(query_ball; tol=tol); include_boundary=include_boundary)
+function is_contained(bv::BoundingVolume, query_ball::Ball; include_boundary::Bool=true, tol::Real=DEFAULT_BV_POINT_TOL)
+    return is_contained(bv, BoundingVolume(query_ball; tol=tol); include_boundary=include_boundary)
 end
 
-function isContained(ball::Ball, query_bv::BoundingVolume; include_boundary::Bool=true)
-    furthest_pt = getFurthestPoint(query_bv, ball.center)
-    return isContained(ball, furthest_pt; include_boundary=include_boundary)
+function is_contained(ball::Ball, query_bv::BoundingVolume; include_boundary::Bool=true)
+    furthest_pt = get_furthest_point(query_bv, ball.center)
+    return is_contained(ball, furthest_pt; include_boundary=include_boundary)
 end
 
 function intersects(bv::BoundingVolume, ball::Ball; include_boundary::Bool=true, tol::Real=DEFAULT_BV_POINT_TOL)
@@ -307,7 +307,7 @@ function intersects(bv::BoundingVolume, ball::Ball; include_boundary::Bool=true,
     if !intersects(bv, BoundingVolume(ball; tol=tol); include_boundary=include_boundary)
         # The two are completely disjoint
         return false
-    elseif isContained(ball, bv; include_boundary=include_boundary)
+    elseif is_contained(ball, bv; include_boundary=include_boundary)
         # The ball is completely contained in the BV
         return true
     end
@@ -316,11 +316,11 @@ function intersects(bv::BoundingVolume, ball::Ball; include_boundary::Bool=true,
     #       to compute norms.
 
     # Check if the closest point on the BV to the ball's center is inside the ball
-    closest_pt = getClosestPoint(bv, ball.center)
-    return isContained(ball, closest_pt; include_boundary=include_boundary)
+    closest_pt = get_closest_point(bv, ball.center)
+    return is_contained(ball, closest_pt; include_boundary=include_boundary)
 end
 
-function getReducedDimBall(removal_dim::Integer, x_d::Real, ball::Ball)
+function get_reduced_dim_ball(removal_dim::Integer, x_d::Real, ball::Ball)
     if x_d < ball.center[removal_dim] - ball.radius || ball.center[removal_dim] + ball.radius < x_d
         throw("SearchableGeometries.Ball: coordinate plane defined by x_$removal_dim = $x_d does not intersect the ball (center=$(ball.center), radius=$(ball.radius))")
     end
@@ -334,7 +334,7 @@ function getReducedDimBall(removal_dim::Integer, x_d::Real, ball::Ball)
     return Ball(new_center, new_radius; p=ball.p, active_indices=false, indices=inactive_dim)
 end
 
-function tightenBVBounds!(bv::BoundingVolume, ball::Ball; tol::Real=DEFAULT_BV_POINT_TOL)
+function tighten_bv_bounds!(bv::BoundingVolume, ball::Ball; tol::Real=DEFAULT_BV_POINT_TOL)
     if ball.dim == 1
         d = ball.active_dim[1]
         lb_ball = ball.center[d] - ball.radius
@@ -365,17 +365,17 @@ function tightenBVBounds!(bv::BoundingVolume, ball::Ball; tol::Real=DEFAULT_BV_P
     altered_ub_indices = []
     num_dim = length(ball.center)
     for f_target in 1:2*num_dim # for each face
-        face_bv = getFaceBoundingVolume(f_target, bv, tol=tol)
+        face_bv = get_face_bounding_volume(f_target, bv, tol=tol)
 
         non_simple = false
         if !intersects(face_bv, ball, include_boundary=true, tol=tol)
             adjacent_faces = [1:f_target-1..., f_target+1:2*num_dim...]
-            d_target = faceIndex2SpatialIndex(f_target, num_dim)
+            d_target = face_index_to_spatial_index(f_target, num_dim)
 
             # Check if this face needs to be updated using a non-simple intersection
             if f_target <= num_dim # f_target is a lb face
                 lb_pt_projected[d_target] = face_bv.lb[d_target]
-                if isContained(face_bv, lb_pt_projected, include_boundary=true)
+                if is_contained(face_bv, lb_pt_projected, include_boundary=true)
                     push!(altered_lb_indices, d_target)
                     bv.lb[d_target] = ball.center[d_target] - ball.radius
                     non_simple = true
@@ -383,7 +383,7 @@ function tightenBVBounds!(bv::BoundingVolume, ball::Ball; tol::Real=DEFAULT_BV_P
                 lb_pt_projected[d_target] = ball.center[d_target]
             else # f_target is an ub face
                 ub_pt_projected[d_target] = face_bv.ub[d_target]
-                if isContained(face_bv, ub_pt_projected, include_boundary=true)
+                if is_contained(face_bv, ub_pt_projected, include_boundary=true)
                     push!(altered_ub_indices, d_target)
                     bv.ub[d_target] = ball.center[d_target] + ball.radius
                     non_simple = true
@@ -394,14 +394,14 @@ function tightenBVBounds!(bv::BoundingVolume, ball::Ball; tol::Real=DEFAULT_BV_P
             # For simple intersections
             if !non_simple
                 for f_adjacent in adjacent_faces
-                    adjacent_face_bv = getFaceBoundingVolume(f_adjacent, bv, tol=tol)
+                    adjacent_face_bv = get_face_bounding_volume(f_adjacent, bv, tol=tol)
 
                     if intersects(adjacent_face_bv, ball, include_boundary=true)
-                        d_fixed = faceIndex2SpatialIndex(f_adjacent, num_dim)
-                        reduced_ball = getReducedDimBall(d_fixed, adjacent_face_bv.lb[d_fixed], ball)
+                        d_fixed = face_index_to_spatial_index(f_adjacent, num_dim)
+                        reduced_ball = get_reduced_dim_ball(d_fixed, adjacent_face_bv.lb[d_fixed], ball)
 
                         # This will modify face_adjacent's bounds 
-                        altered_lb_indices_new, altered_ub_indices_new = tightenBVBounds!(adjacent_face_bv, reduced_ball, tol=tol)
+                        altered_lb_indices_new, altered_ub_indices_new = tighten_bv_bounds!(adjacent_face_bv, reduced_ball, tol=tol)
 
                         # Update the higher-dim BV with the new bounds on face_adjacent
                         bv.lb[altered_lb_indices_new] .= adjacent_face_bv.lb[altered_lb_indices_new]
@@ -418,22 +418,22 @@ function tightenBVBounds!(bv::BoundingVolume, ball::Ball; tol::Real=DEFAULT_BV_P
     return altered_lb_indices, altered_ub_indices
 end
 
-function getIntersection(bv::BoundingVolume, ball::Ball; tol::Real=DEFAULT_BV_POINT_TOL)
+function get_intersection(bv::BoundingVolume, ball::Ball; tol::Real=DEFAULT_BV_POINT_TOL)
     if !intersects(bv, ball; include_boundary=true, tol=tol)
         return BoundingVolume()
     end
 
     bv_ball = BoundingVolume(ball; tol=tol)
-    cropped_bv = getIntersection(bv, bv_ball, tol=tol)
+    cropped_bv = get_intersection(bv, bv_ball, tol=tol)
 
     # Check if the ball's center is in the BV or the BV is completely contained in the ball
-    if isContained(ball, cropped_bv)
+    if is_contained(ball, cropped_bv)
         return cropped_bv
     end
 
     # The ball's center is not contained in the BV, so it
     # may be possible to crop the BV further
-    tightenBVBounds!(cropped_bv, ball, tol=tol)
+    tighten_bv_bounds!(cropped_bv, ball, tol=tol)
     return cropped_bv
 end
 
@@ -465,7 +465,7 @@ end
 
 import Base.==
 function Base.:(==)(plane1::Hyperplane, plane2::Hyperplane; tol::Real=DEFAULT_BV_POINT_TOL)
-    return all(plane1.point .== plane2.point) &&
+    return isapprox(plane1.n' * plane1.point, plane2.n' * plane2.point, atol=tol) &&
            all(plane1.n .== plane2.n) &&
            plane1.dim == plane2.dim &&
            plane1.embedding_dim == plane2.embedding_dim &&
@@ -474,7 +474,7 @@ function Base.:(==)(plane1::Hyperplane, plane2::Hyperplane; tol::Real=DEFAULT_BV
            all(plane1.is_active .== plane2.is_active)
 end
 
-function isContained(plane::Hyperplane, query_pt::Vector{<:Real}; tol::Real=DEFAULT_BV_POINT_TOL)
+function is_contained(plane::Hyperplane, query_pt::Vector{<:Real}; tol::Real=DEFAULT_BV_POINT_TOL)
     if length(query_pt) != plane.embedding_dim
         throw("SearchableGeometries.Hyperplane: point dimension($(length(query_pt))) does not match hyperplane embedding dimension($(plane.embedding_dim))")
     end
@@ -482,7 +482,7 @@ function isContained(plane::Hyperplane, query_pt::Vector{<:Real}; tol::Real=DEFA
     return abs(dot(plane.n, query_pt - plane.point)) <= tol
 end
 
-function getClosestPoint(pt::Vector{<:Real}, query_plane::Hyperplane)
+function get_closest_point(pt::Vector{<:Real}, query_plane::Hyperplane)
     if length(pt) != query_plane.embedding_dim
         throw("SearchableGeometries.Hyperplane: point dimension($(length(pt))) does not match hyperplane embedding dimension($(query_plane.embedding_dim))")
     end
@@ -490,7 +490,7 @@ function getClosestPoint(pt::Vector{<:Real}, query_plane::Hyperplane)
     return pt - dot(query_plane.n, pt - query_plane.point) * query_plane.n
 end
 
-function signedExtrema(bv::BoundingVolume, query_plane::Hyperplane; return_points::Bool=false)
+function signed_extrema(bv::BoundingVolume, query_plane::Hyperplane; return_points::Bool=false)
     # We study the signed offset function
     #     h(x) = dot(n, x - point)
     # over the whole BV. Since h is linear, its minimum and maximum
@@ -551,7 +551,7 @@ function intersects(bv::BoundingVolume, query_plane::Hyperplane; include_boundar
     end
 
     # Compute the minimum and maximum signed offsets over the BV
-    smin, smax = signedExtrema(bv, query_plane; return_points=false)
+    smin, smax = signed_extrema(bv, query_plane; return_points=false)
 
     if include_boundary
         # The hyperplane intersects the bounding volume if 0 is in the interval [smin, smax]
@@ -562,7 +562,7 @@ function intersects(bv::BoundingVolume, query_plane::Hyperplane; include_boundar
     end
 end
 
-function tightenBVBounds!(bv::BoundingVolume, query_plane::Hyperplane; tol=DEFAULT_BV_POINT_TOL::Real)
+function tighten_bv_bounds!(bv::BoundingVolume, query_plane::Hyperplane; tol=DEFAULT_BV_POINT_TOL::Real)
     # Empty BV: nothing to tighten
     if bv.is_empty
         return Int[], Int[]
@@ -665,7 +665,7 @@ function tightenBVBounds!(bv::BoundingVolume, query_plane::Hyperplane; tol=DEFAU
     return altered_lb_indices, altered_ub_indices
 end
 
-function getIntersection(bv::BoundingVolume, query_plane::Hyperplane; tol::Real=DEFAULT_BV_POINT_TOL)
+function get_intersection(bv::BoundingVolume, query_plane::Hyperplane; tol::Real=DEFAULT_BV_POINT_TOL)
     # No intersection at all
     if !intersects(bv, query_plane; include_boundary=true, tol=tol)
         return BoundingVolume()
@@ -674,14 +674,14 @@ function getIntersection(bv::BoundingVolume, query_plane::Hyperplane; tol::Real=
     # Start from the full BV, then tighten each coordinate to the
     # smallest interval that can still satisfy the plane equation.
     intersection_bv = BoundingVolume(copy(bv.lb), copy(bv.ub); tol=tol)
-    tightenBVBounds!(intersection_bv, query_plane; tol=tol)
+    tighten_bv_bounds!(intersection_bv, query_plane; tol=tol)
 
     # Rebuild once so cached active/inactive metadata stays consistent
     # if any coordinates collapsed to points.
     return BoundingVolume(copy(intersection_bv.lb), copy(intersection_bv.ub); tol=tol)
 end
 
-function getClosestPoint(bv::BoundingVolume, query_plane::Hyperplane; tol=DEFAULT_BV_POINT_TOL::Real)
+function get_closest_point(bv::BoundingVolume, query_plane::Hyperplane; tol=DEFAULT_BV_POINT_TOL::Real)
     # If the bounding volume is empty, you cannot find a closest point
     if bv.is_empty
         throw("SearchableGeometries.Hyperplane: cannot compute closest point of an empty BoundingVolume")
@@ -693,7 +693,7 @@ function getClosestPoint(bv::BoundingVolume, query_plane::Hyperplane; tol=DEFAUL
     end
 
     # Compute the minimum and maximum signed offsets over the BV
-    smin, smax, xmin, xmax = signedExtrema(bv, query_plane; return_points=true)
+    smin, smax, xmin, xmax = signed_extrema(bv, query_plane; return_points=true)
 
     # Case 1: the BV intersects the plane.
     # Then the closest distance is 0, so we return the lexicographically
@@ -774,7 +774,7 @@ function getClosestPoint(bv::BoundingVolume, query_plane::Hyperplane; tol=DEFAUL
     return xmax
 end
 
-function getFurthestPoint(bv::BoundingVolume, query_plane::Hyperplane; tol=DEFAULT_BV_POINT_TOL::Real)
+function get_furthest_point(bv::BoundingVolume, query_plane::Hyperplane; tol=DEFAULT_BV_POINT_TOL::Real)
     # If the bounding volume is empty, you cannot find a furthest point
     if bv.is_empty
         throw("SearchableGeometries.Hyperplane: cannot compute furthest point of an empty BoundingVolume")
@@ -786,7 +786,7 @@ function getFurthestPoint(bv::BoundingVolume, query_plane::Hyperplane; tol=DEFAU
     end
 
     # Compute the minimum and maximum signed offsets over the BV
-    smin, smax, xmin, xmax = signedExtrema(bv, query_plane; return_points=true)
+    smin, smax, xmin, xmax = signed_extrema(bv, query_plane; return_points=true)
 
     # If one side is strictly farther, return its witness
     if abs(smin) > abs(smax) + tol
@@ -807,134 +807,6 @@ function getFurthestPoint(bv::BoundingVolume, query_plane::Hyperplane; tol=DEFAU
 
     # Equal up to tolerance: either is fine
     return xmin
-end
-
-
-# Lines --------------------------------------------------------------------------------
-struct Line
-    dir::Vector
-    source::Vector
-
-    function Line(dir::Vector, source::Vector)
-        if length(dir) != length(source)
-            throw("SearchableGeometries.Line: direction vector and source point dimension must match")
-        end
-
-        return new(dir ./ norm(dir), source)
-    end
-end
-
-function (::Line)(s::Real)
-    return source + dir * s
-end
-
-
-# Cones --------------------------------------------------------------------------------
-struct Cone <: SearchableGeometry
-    vertex::Vector
-    axis::Vector
-    slope::Real
-
-    function Cone(vertex::Vector, axis::Vector, slope::Real)
-        if length(vertex) != length(axis)
-            throw("SearchableGeometries.Cone: Vertex and axis vector do not have the same dimensions (dim(vertex)=$(length(vertex)), dim(axis)=$(length(axis))")
-        elseif slope < zero(slope)
-            throw("SearchableGeometries.Cone: Cannot construct cone with negative slope.")
-        end
-
-        return new(vertex, axis ./ norm(axis), slope)
-    end
-end
-
-import Base.==
-function Base.:(==)(cone1::Cone, cone2::Cone; tol=DEFAULT_BV_POINT_TOL::Real)
-    return all(cone1.vertex .== cone2.vertex) &&
-           all(cone1.axis .== cone2.axis) &&
-           cone1.slope == cone2.slope
-end
-
-function getMajorRadius(cone::Cone, p::Vector)
-    return (cone.vertex .- p)' * cone.axis
-end
-
-function getRadii(cone::Cone, p::Vector)
-    dist2Vertex = cone.vertex .- p
-    R = dist2Vertex' * cone.axis
-    r = norm(dist2Vertex .- R * cone.axis)
-    return R, r
-end
-
-# TODO: this functions is not guaranteed to have a unique output; provide a means to break ties
-function getClosestPoint(bv::BoundingVolume, query_line::Line)
-    # TODO: Finish
-end
-
-# TODO: this functions is not guaranteed to have a unique output; provide a means to break ties
-function getClosestPoint(cone::Cone, query_line::Line)
-    # TODO: Finish
-end
-
-# TODO: this functions is not guaranteed to have a unique output; provide a means to break ties
-function getFurthestPoint(cone::Cone, query_line::Line)
-    # TODO: Finish
-end
-
-function getConeBounds(cone::Cone)
-    if cone.slope == 0
-        return Line(cone.vertex, cone.axis)
-    end
-
-    ub_scalings = similar(cone.vertex)
-    lb_scalings = similar(cone.vertex)
-    e_i = spzeros(length(cone.vertex))
-
-    for i in eachindex(cone.vertex)
-        e_i[i] = 1
-        if abs(e_i' * cone.axis) == 1
-            lb_scalings[i] = 0.0
-            ub_scalings[i] = 0.0
-        else
-            u0 = cone.vertex + e_i
-            R0, r = getRadii(cone, u0)
-
-            R_bound = r / cone.slope
-            u_ub_i = u0[i] + (R_bound - R0) * cone.axis[i]
-            u_lb_i = (cone.vertex-e_i)[i] + (R_bound - R0) * cone.axis[i]
-
-            ub_scalings[i] = (u_ub_i - cone.vertex[i]) / R_bound
-            lb_scalings[i] = (u_lb_i - cone.vertex[i]) / R_bound
-        end
-    end
-
-    return Line(cone.vertex, lb_scalings), Line(cone.vertex, ub_scalings)
-end
-
-function getBoundingRadii(cone::Cone, query_bv::BoundingVolume)
-    closest_R_pt = getClosestPoint(query_bv, Hyperplane(cone.vertex, cone.axis))
-    furthest_R_pt = getFurthestPoint(query_bv, Hyperplane(cone.vertex, cone.axis))
-    return getMajorRadius(cone, closest_R_pt), getMajorRadius(cone, furthest_R_pt)
-end
-
-function BoundingVolume(ub_func, lb_func, s1::Real, s2::Real; tol=DEFAULT_BV_POINT_TOL::Real)
-    lb1 = lb_func(s1)
-    ub1 = ub_func(s1)
-
-    lb2 = lb_func(s2)
-    ub2 = ub_func(s2)
-
-    return BoundingVolume(ub1, lb1, ub2, lb2, tol=tol)
-end
-
-function BoundingVolume(cone::Cone; R_max::Real, R_min::Real=zero(cone.slope), tol=DEFAULT_BV_POINT_TOL::Real)
-    if R_max < R_min
-        throw("SearchableGeometries.BoundingVolume: R_max must be greater than or equal to R_min")
-    end
-
-    if R_min < 0
-        throw("SearchableGeometries.BoundingVolume: R_min and R_max do not satisfy 0 <= R_min <= R_max")
-    end
-
-    return BoundingVolume(cone_ub, cone_lb, R_max, R_min, tol=tol)
 end
 
 end # module SearchableGeometries

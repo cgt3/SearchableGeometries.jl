@@ -54,109 +54,109 @@ end
     @test bv.is_active == ones(Bool, 3)
 end
 
-# `getClosestPoint`: ------------------------------------------------------
-@testset "getClosestPoint(BV, pt): Interior Point (pt in BV)" begin
+# `get_closest_point`: ------------------------------------------------------
+@testset "get_closest_point(BV, pt): Interior Point (pt in BV)" begin
     bv = BoundingVolume([0, 0], [1, 1])
     pt = [0.5, 0.5]
 
-    @test all(getClosestPoint(bv, pt) .== pt)
+    @test all(get_closest_point(bv, pt) .== pt)
 end
 
-@testset "getClosestPoint(BV, pt): Boundary Point (pt on boundary of BV)" begin
+@testset "get_closest_point(BV, pt): Boundary Point (pt on boundary of BV)" begin
     bv = BoundingVolume([0, 0], [1, 1])
     pt = [1, 0.5]
 
-    @test all(getClosestPoint(bv, pt) .== pt)
+    @test all(get_closest_point(bv, pt) .== pt)
 end
 
-@testset "getClosestPoint(BV, pt): Exterior Point (pt not in BV)" begin
+@testset "get_closest_point(BV, pt): Exterior Point (pt not in BV)" begin
     bv = BoundingVolume([0, 0], [1, 1])
     pt1 = [2, 2]
     pt2 = [-1, -0.5]
 
-    @test all(getClosestPoint(bv, pt1) .== bv.ub)
-    @test all(getClosestPoint(bv, pt2) .== bv.lb)
+    @test all(get_closest_point(bv, pt1) .== bv.ub)
+    @test all(get_closest_point(bv, pt2) .== bv.lb)
 end
 
-# `getFurthestPoint`: ------------------------------------------------------
-@testset "getFurthestPoint(BV, pt): Interior Point (pt in BV)" begin
+# `get_furthest_point`: ------------------------------------------------------
+@testset "get_furthest_point(BV, pt): Interior Point (pt in BV)" begin
     bv = BoundingVolume([0, 0], [1, 1])
     pt1 = [0.5, 0.5]
     pt2 = [0.25, 0.25]
 
-    @test all(getFurthestPoint(bv, pt1) .== bv.lb) # Note: ties goes to lb
-    @test all(getFurthestPoint(bv, pt2) .== bv.ub)
+    @test all(get_furthest_point(bv, pt1) .== bv.lb) # Note: ties goes to lb
+    @test all(get_furthest_point(bv, pt2) .== bv.ub)
 end
 
-@testset "getFurthestPoint(BV, pt): Boundary Point (pt on boundary of BV)" begin
+@testset "get_furthest_point(BV, pt): Boundary Point (pt on boundary of BV)" begin
     bv = BoundingVolume([0, 0], [1, 1])
     pt = [0.25, 1]
 
-    @test all(getFurthestPoint(bv, pt) .== [1, 0])
+    @test all(get_furthest_point(bv, pt) .== [1, 0])
 end
 
-@testset "getFurthestPoint(BV, pt): Exterior Point (pt not in BV)" begin
+@testset "get_furthest_point(BV, pt): Exterior Point (pt not in BV)" begin
     bv = BoundingVolume([0, 0], [1, 1])
     pt1 = [1.5, 1.5]
     pt2 = [-1, -0.5]
 
-    @test all(getFurthestPoint(bv, pt1) .== bv.lb)
-    @test all(getFurthestPoint(bv, pt2) .== bv.ub)
+    @test all(get_furthest_point(bv, pt1) .== bv.lb)
+    @test all(get_furthest_point(bv, pt2) .== bv.ub)
 end
 
-# `isContained`: ----------------------------------------------------------
-@testset "isContained(BV, pt)" begin
+# `is_contained`: ----------------------------------------------------------
+@testset "is_contained(BV, pt)" begin
     bv = BoundingVolume([0, 0], [1, 1])
     interior_pt = [0.5, 0.5]
     boundary_pt = [1, 0]
     exterior_pt = [2, 2]
 
-    @test isContained(bv, interior_pt, include_boundary=true) == true
-    @test isContained(bv, interior_pt, include_boundary=false) == true
+    @test is_contained(bv, interior_pt, include_boundary=true) == true
+    @test is_contained(bv, interior_pt, include_boundary=false) == true
 
-    @test isContained(bv, boundary_pt, include_boundary=true) == true
-    @test isContained(bv, boundary_pt, include_boundary=false) == false
+    @test is_contained(bv, boundary_pt, include_boundary=true) == true
+    @test is_contained(bv, boundary_pt, include_boundary=false) == false
 
-    @test isContained(bv, exterior_pt, include_boundary=true) == false
-    @test isContained(bv, exterior_pt, include_boundary=false) == false
+    @test is_contained(bv, exterior_pt, include_boundary=true) == false
+    @test is_contained(bv, exterior_pt, include_boundary=false) == false
 end
 
-@testset "isContained(BV, BV): Empty Intersection" begin
+@testset "is_contained(BV, BV): Empty Intersection" begin
     bv = BoundingVolume([0, 0], [1, 1])
     bv_query = BoundingVolume([-2, -2], [-1, -1])
 
-    @test isContained(bv, bv_query, include_boundary=true) == false
-    @test isContained(bv, bv_query, include_boundary=false) == false
+    @test is_contained(bv, bv_query, include_boundary=true) == false
+    @test is_contained(bv, bv_query, include_boundary=false) == false
 end
 
-@testset "isContained(BV, BV): Partial Intersection" begin
+@testset "is_contained(BV, BV): Partial Intersection" begin
     bv = BoundingVolume([0, 0], [1, 1])
     bv_query = BoundingVolume([-1, -1], [0.5, 0.5])
 
     # Full-dim intersection
-    @test isContained(bv, bv_query, include_boundary=true) == false
-    @test isContained(bv, bv_query, include_boundary=false) == false
+    @test is_contained(bv, bv_query, include_boundary=true) == false
+    @test is_contained(bv, bv_query, include_boundary=false) == false
 
     # Low-dim intersection
     bv_query = BoundingVolume([-1, 0], [0, 1])
-    @test isContained(bv, bv_query, include_boundary=true) == false
-    @test isContained(bv, bv_query, include_boundary=false) == false
+    @test is_contained(bv, bv_query, include_boundary=true) == false
+    @test is_contained(bv, bv_query, include_boundary=false) == false
 end
 
-@testset "isContained(BV, BV): Contained" begin
+@testset "is_contained(BV, BV): Contained" begin
     bv = BoundingVolume([0, 0], [1, 1])
     bv_query = BoundingVolume([0.25, 0.25], [0.75, 0.75])
 
-    @test isContained(bv, bv_query, include_boundary=true) == true
-    @test isContained(bv, bv_query, include_boundary=false) == true
+    @test is_contained(bv, bv_query, include_boundary=true) == true
+    @test is_contained(bv, bv_query, include_boundary=false) == true
 end
 
-@testset "isContained(BV, BV): Strictly/Fully Contained" begin
+@testset "is_contained(BV, BV): Strictly/Fully Contained" begin
     bv = BoundingVolume([0, 0], [1, 1])
     bv_query = BoundingVolume([0.25, 0.25], [1, 1])
 
-    @test isContained(bv, bv_query, include_boundary=true) == true
-    @test isContained(bv, bv_query, include_boundary=false) == false
+    @test is_contained(bv, bv_query, include_boundary=true) == true
+    @test is_contained(bv, bv_query, include_boundary=false) == false
 end
 
 # `intersects`: ----------------------------------------------------------
@@ -184,58 +184,58 @@ end
     @test intersects(bv1, bv2, include_boundary=false) == true
 end
 
-# `getIntersection`: ------------------------------------------------------
-@testset "getIntersection(BV, BV): Empty Intersection" begin
+# `get_intersection`: ------------------------------------------------------
+@testset "get_intersection(BV, BV): Empty Intersection" begin
     bv1 = BoundingVolume([1, 2], [3, 4])
     bv2 = BoundingVolume([-3, -4], [-1, -2])
 
-    intersection = getIntersection(bv1, bv2)
+    intersection = get_intersection(bv1, bv2)
     @test intersection.is_empty == true
 end
 
-@testset "getIntersection(BV, BV): Low-Dim Intersection" begin
+@testset "get_intersection(BV, BV): Low-Dim Intersection" begin
     bv = BoundingVolume([0, 0], [1, 1])
 
     bv_pt = BoundingVolume([-1, -1], [0, 0])
-    pt_intersection = getIntersection(bv, bv_pt)
+    pt_intersection = get_intersection(bv, bv_pt)
     @test pt_intersection.dim == 0
     @test pt_intersection.is_empty == false
     @test pt_intersection.lb == pt_intersection.ub
 
     bv_line = BoundingVolume([-1, 0], [0, 1])
-    line_intersection = getIntersection(bv, bv_line)
+    line_intersection = get_intersection(bv, bv_line)
     @test line_intersection.dim == 1
     @test line_intersection.is_empty == false
     @test line_intersection.lb == [0, 0]
     @test line_intersection.ub == [0, 1]
 end
 
-@testset "getIntersection(BV, BV): Full-Dim Intersection" begin
+@testset "get_intersection(BV, BV): Full-Dim Intersection" begin
     bv = BoundingVolume([0, 0], [1, 1])
 
     bv_interior = BoundingVolume([0.25, 0.25], [0.75, 0.75])
-    interior_intersection = getIntersection(bv, bv_interior)
+    interior_intersection = get_intersection(bv, bv_interior)
     @test interior_intersection == bv_interior
 
     bv_overlapping = BoundingVolume([-1, -1], [0.25, 0.5])
     intersection_true = BoundingVolume([0, 0], [0.25, 0.5])
-    intersection = getIntersection(bv, bv_overlapping)
+    intersection = get_intersection(bv, bv_overlapping)
     @test intersection == intersection_true
 end
 
-# `faceIndex2SpatialIndex`: ------------------------------------------------------
-@testset "faceIndex2SpatialIndex(face_index, num_dim)" begin
+# `face_index_to_spatial_index`: ------------------------------------------------------
+@testset "face_index_to_spatial_index(face_index, num_dim)" begin
     num_dim = 3
-    @test faceIndex2SpatialIndex(1, num_dim) == 1
-    @test faceIndex2SpatialIndex(2, num_dim) == 2
-    @test faceIndex2SpatialIndex(3, num_dim) == 3
-    @test faceIndex2SpatialIndex(4, num_dim) == 1
-    @test faceIndex2SpatialIndex(5, num_dim) == 2
-    @test faceIndex2SpatialIndex(6, num_dim) == 3
+    @test face_index_to_spatial_index(1, num_dim) == 1
+    @test face_index_to_spatial_index(2, num_dim) == 2
+    @test face_index_to_spatial_index(3, num_dim) == 3
+    @test face_index_to_spatial_index(4, num_dim) == 1
+    @test face_index_to_spatial_index(5, num_dim) == 2
+    @test face_index_to_spatial_index(6, num_dim) == 3
 end
 
-# `getFaceBoundingVolume`: ------------------------------------------------------
-@testset "getFaceBoundingVolume(face_index, bv)" begin
+# `get_face_bounding_volume`: ------------------------------------------------------
+@testset "get_face_bounding_volume(face_index, bv)" begin
     bv = BoundingVolume([0, 0, 0], [1, 1, 1])
 
     left = BoundingVolume([0, 0, 0], [0, 1, 1])
@@ -248,12 +248,12 @@ end
     top = BoundingVolume([0, 0, 1], [1, 1, 1])
 
     # Lower bound faces
-    @test getFaceBoundingVolume(1, bv) == left
-    @test getFaceBoundingVolume(2, bv) == front
-    @test getFaceBoundingVolume(3, bv) == bottom
+    @test get_face_bounding_volume(1, bv) == left
+    @test get_face_bounding_volume(2, bv) == front
+    @test get_face_bounding_volume(3, bv) == bottom
 
     # Upper bound faces
-    @test getFaceBoundingVolume(4, bv) == right
-    @test getFaceBoundingVolume(5, bv) == back
-    @test getFaceBoundingVolume(6, bv) == top
+    @test get_face_bounding_volume(4, bv) == right
+    @test get_face_bounding_volume(5, bv) == back
+    @test get_face_bounding_volume(6, bv) == top
 end
