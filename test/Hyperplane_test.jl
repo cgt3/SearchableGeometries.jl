@@ -223,6 +223,27 @@ end
     @test intersection_bv == BoundingVolume()
 end
 
+@testset "get_intersection(bv, plane): intersection is a point" begin
+    bv = BoundingVolume([0.0, 0.0], [1.0, 1.0])
+    plane = Hyperplane([0.0, 0.0], [1.0, 1.0]) # x + y = 0
+
+    intersection_bv = get_intersection(bv, plane)
+    @test !intersection_bv.is_empty
+
+    # The intersection is exactly the point (0,0),
+    # so the returned BV should collapse in every coordinate.
+    @test intersection_bv.lb ≈ [0.0, 0.0]
+    @test intersection_bv.ub ≈ [0.0, 0.0]
+
+    # Since lb == ub in every coordinate, this is a point BV.
+    @test intersection_bv.lb ≈ intersection_bv.ub
+
+    # This should now be zero-dimensional.
+    @test intersection_bv.dim == 0
+    @test isempty(intersection_bv.active_dim)
+    @test intersection_bv.inactive_dim == [1, 2]
+end
+
 @testset "get_intersection(bv, plane): Plane cuts through 2D BV interior" begin
     bv = BoundingVolume([0.0, 0.0], [2.0, 2.0])
     plane = Hyperplane([0.0, 1.0], [1.0, 1.0])   # x + y = 1
