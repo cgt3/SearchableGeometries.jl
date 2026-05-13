@@ -14,6 +14,9 @@ export is_contained, intersects, get_intersection, tighten_bv_bounds!
 # Ball only Functions:
 export get_reduced_dim_ball
 
+# Hyperplane only Functions:
+export signed_extrema, get_furthest_pt, get_antifurthest_pt
+
 import Base.getindex
 
 const DEFAULT_BV_POINT_TOL = 1e-15
@@ -490,53 +493,54 @@ function get_closest_point(pt::Vector{<:Real}, query_plane::Hyperplane)
     return pt - dot(query_plane.n, pt - query_plane.point) * query_plane.n
 end
 
-function signed_extrema(bv::BoundingVolume, query_plane::Hyperplane; return_points::Bool=false)
-    # We study the signed offset function
-    #     h(x) = dot(n, x - point)
-    # over the whole BV. Since h is linear, its minimum and maximum
-    # occur at corners of the box.
-    T = promote_type(eltype(bv.lb), eltype(bv.ub), eltype(query_plane.point), eltype(query_plane.n))
-    smin = zero(T)
-    smax = zero(T)
+function get_furthest_pt(bv::BoundingVolume, n::AbstractVector{<:Real}; tol=DEFAULT_BV_POINT_TOL::Real)
+    if length(n) != length(bv.lb)
+        throw("SearchableGeometries.get_furthest_pt: normal vector dimension($(length(n))) does not match bounding volume dimension($(length(bv.lb)))")
+    end
 
-    # xmin = lexicographically smallest point attaining smin
-    # xmax = lexicographically smallest point attaining smax
-    xmin = Vector{T}(undef, length(bv.lb))
-    xmax = Vector{T}(undef, length(bv.lb))
+    if iszero(norm(n))
+        throw("SearchableGeometries.get_furthest_pt: normal vector must be nonzero")
+    end
 
-    for d in eachindex(bv.lb)
-        nd = query_plane.n[d]
+    T = promote_type(eltype(bv.lb), eltype(bv.ub), eltype(n))
+    pt = similar(bv.lb, T)
 
-        if nd > 0
-            # Positive normal component:
-            # - Lower bound gives the minimum signed value,
-            # - Upper bound gives the maximum signed value.
-            smin += nd * (bv.lb[d] - query_plane.point[d])
-            smax += nd * (bv.ub[d] - query_plane.point[d])
-
-            xmin[d] = bv.lb[d]
-            xmax[d] = bv.ub[d]
-
-        elseif nd < 0
-            # Negative normal component:
-            # - Lower bound gives the maximum signed value,
-            # - Upper bound gives the minimum signed value.
-            smin += nd * (bv.ub[d] - query_plane.point[d])
-            smax += nd * (bv.lb[d] - query_plane.point[d])
-
-            xmin[d] = bv.ub[d]
-            xmax[d] = bv.lb[d]
+    for i in eachindex(n)
+        if n[i] > tol
+            pt[i] = bv.ub[i]
+        elseif n[i] < -tol
+            pt[i] = bv.lb[i]
         else
-            # If nd == 0, this coordinate does not affect the signed offset
-            # To keep the tie-break deterministic, choose the
-            # lexicographically smallest value for both witnesses.
-            xmin[d] = bv.lb[d]
-            xmax[d] = bv.lb[d]
+            # n[i] is approximately zero, so either bound gives the same dot product.
+            # Pick ub to make the result deterministic.
+            pt[i] = bv.ub[i]
         end
     end
-    # smin -> signed distance of the BV point furthest along -n.
-    # smax -> signed distance of the BV point furthest along +n.
-    return return_points ? (smin, smax, xmin, xmax) : (smin, smax)
+
+    return pt
+end
+
+function get_antifurthest_pt(bv::BoundingVolume, n::AbstractVector{<:Real}; tol=DEFAULT_BV_POINT_TOL::Real)
+    if length(n) != length(bv.lb)
+        throw("SearchableGeometries.get_antifurthest_pt: normal vector dimension($(length(n))) does not match bounding volume dimension($(length(bv.lb)))")
+    end
+
+    T = promote_type(eltype(bv.lb), eltype(bv.ub), eltype(n))
+    pt = similar(bv.lb, T)
+
+    for i in eachindex(n)
+        if n[i] > tol
+            pt[i] = bv.lb[i]
+        elseif n[i] < -tol
+            pt[i] = bv.ub[i]
+        else
+            # n[i] is approximately zero, so either bound gives the same dot product.
+            # Pick lb to make this opposite of get_furthest_point.
+            pt[i] = bv.lb[i]
+        end
+    end
+
+    return pt
 end
 
 function intersects(bv::BoundingVolume, query_plane::Hyperplane; include_boundary::Bool=true, tol::Real=DEFAULT_BV_POINT_TOL)
@@ -550,8 +554,13 @@ function intersects(bv::BoundingVolume, query_plane::Hyperplane; include_boundar
         throw("SearchableGeometries.Hyperplane: bounding volume dimension($(length(bv.lb))) does not match hyperplane embedding dimension($(query_plane.embedding_dim))")
     end
 
+    # Compute the furthest and antifurthest points
+    furthest_pt = get_furthest_pt(bv, query_plane.n; tol=tol)
+    antifurthest_pt = get_antifurthest_pt(bv, query_plane.n; tol=tol)
+
     # Compute the minimum and maximum signed offsets over the BV
-    smin, smax = signed_extrema(bv, query_plane; return_points=false)
+    smin = dot(query_plane.n, antifurthest_pt - query_plane.point)
+    smax = dot(query_plane.n, furthest_pt - query_plane.point)
 
     if include_boundary
         # The hyperplane intersects the bounding volume if 0 is in the interval [smin, smax]
@@ -692,8 +701,13 @@ function get_closest_point(bv::BoundingVolume, query_plane::Hyperplane; tol=DEFA
         throw("SearchableGeometries.Hyperplane: bounding volume dimension($(length(bv.lb))) does not match hyperplane embedding dimension($(query_plane.embedding_dim))")
     end
 
+    # Compute the furthest and antifurthest points
+    f_pt = get_furthest_pt(bv, query_plane.n; tol=tol)
+    af_pt = get_antifurthest_pt(bv, query_plane.n; tol=tol)
+
     # Compute the minimum and maximum signed offsets over the BV
-    smin, smax, xmin, xmax = signed_extrema(bv, query_plane; return_points=true)
+    smin = dot(query_plane.n, af_pt - query_plane.point)
+    smax = dot(query_plane.n, f_pt - query_plane.point)
 
     # Case 1: the BV intersects the plane.
     # Then the closest distance is 0, so we return the lexicographically
@@ -766,12 +780,32 @@ function get_closest_point(bv::BoundingVolume, query_plane::Hyperplane; tol=DEFA
     # Case 2: BV is entirely on the positive side of the plane.
     # Then the closest point is the point minimizing the signed offset.
     if smin > tol
-        return xmin
+        closest_pt = copy(af_pt)
+
+        # Coordinates with n[i] ≈ 0 do not affect distance to the plane.
+        # Choose lb to get the lexicographically smallest closest point.
+        for i in eachindex(query_plane.n)
+            if abs(query_plane.n[i]) <= tol
+                closest_pt[i] = bv.lb[i]
+            end
+        end
+
+        return closest_pt
     end
 
     # Case 3: BV is entirely on the negative side of the plane.
     # Then the closest point is the point maximizing the signed offset.
-    return xmax
+    closest_pt = copy(f_pt)
+
+    # Coordinates with n[i] ≈ 0 do not affect distance to the plane.
+    # Choose lb to get the lexicographically smallest closest point.
+    for i in eachindex(query_plane.n)
+        if abs(query_plane.n[i]) <= tol
+            closest_pt[i] = bv.lb[i]
+        end
+    end
+
+    return closest_pt
 end
 
 function get_furthest_point(bv::BoundingVolume, query_plane::Hyperplane; tol=DEFAULT_BV_POINT_TOL::Real)
@@ -785,28 +819,69 @@ function get_furthest_point(bv::BoundingVolume, query_plane::Hyperplane; tol=DEF
         throw("SearchableGeometries.Hyperplane: bounding volume dimension($(length(bv.lb))) does not match hyperplane embedding dimension($(query_plane.embedding_dim))")
     end
 
-    # Compute the minimum and maximum signed offsets over the BV
-    smin, smax, xmin, xmax = signed_extrema(bv, query_plane; return_points=true)
+    # Compute the furthest and antifurthest points
+    f_pt = get_furthest_pt(bv, query_plane.n; tol=tol)
+    af_pt = get_antifurthest_pt(bv, query_plane.n; tol=tol)
 
-    # If one side is strictly farther, return its witness
+    # Compute the minimum and maximum signed offsets over the BV
+    smin = dot(query_plane.n, af_pt - query_plane.point)
+    smax = dot(query_plane.n, f_pt - query_plane.point)
+
+    # Case 1: If the antifurthest point is strictly farther from the plane,
+    # return it as the furthest point from the plane.
     if abs(smin) > abs(smax) + tol
-        return xmin
-    elseif abs(smax) > abs(smin) + tol
-        return xmax
+        furthest_pt = copy(af_pt)
+
+        # Coordinates with n[i] ≈ 0 do not affect distance to the plane.
+        # Choose lb to get the lexicographically smallest furthest point.
+        for i in eachindex(query_plane.n)
+            if abs(query_plane.n[i]) <= tol
+                furthest_pt[i] = bv.lb[i]
+            end
+        end
+
+        return furthest_pt
     end
 
-    # Tie case: both are equally far from the plane.
-    # Break ties lexicographically inside this function.
-    for i in eachindex(xmin)
-        if xmin[i] < xmax[i] - tol
-            return xmin
-        elseif xmin[i] > xmax[i] + tol
-            return xmax
+    # Case 2: If the furthest point in the normal direction is strictly farther
+    # from the plane, return it.
+    if abs(smax) > abs(smin) + tol
+        furthest_pt = copy(f_pt)
+
+        # Coordinates with n[i] ≈ 0 do not affect distance to the plane.
+        # Choose lb to get the lexicographically smallest furthest point.
+        for i in eachindex(query_plane.n)
+            if abs(query_plane.n[i]) <= tol
+                furthest_pt[i] = bv.lb[i]
+            end
+        end
+
+        return furthest_pt
+    end
+
+    # Case 3: Tie case - both sides are equally far from the plane.
+    # First make both candidates lexicographically smallest in free coordinates.
+    af_candidate = copy(af_pt)
+    f_candidate = copy(f_pt)
+
+    for i in eachindex(query_plane.n)
+        if abs(query_plane.n[i]) <= tol
+            af_candidate[i] = bv.lb[i]
+            f_candidate[i] = bv.lb[i]
+        end
+    end
+
+    # Break ties lexicographically.
+    for i in eachindex(af_candidate)
+        if af_candidate[i] < f_candidate[i] - tol
+            return af_candidate
+        elseif af_candidate[i] > f_candidate[i] + tol
+            return f_candidate
         end
     end
 
     # Equal up to tolerance: either is fine
-    return xmin
+    return af_candidate
 end
 
 end # module SearchableGeometries
