@@ -52,15 +52,6 @@ Abstract supertype for geometric objects that can be queried by the package.
 Concrete subtypes currently include:
 
 - [`BoundingVolume`](@ref)
-- [`Ball`](@ref)
-- [`Hyperplane`](@ref)
-
-This type is mainly useful for dispatch and for documenting the shared geometric
-interface. Users usually construct one of the concrete subtypes directly.
-
-# See also
-
-[`BoundingVolume`](@ref), [`Ball`](@ref), [`Hyperplane`](@ref)
 """
 abstract type SearchableGeometry end
 
@@ -124,11 +115,6 @@ segment = BoundingVolume([0.0, 0.0], [0.0, 1.0])
 segment.dim          # 1
 segment.inactive_dim # [1]
 ```
-
-# See also
-
-[`Ball`](@ref), [`Hyperplane`](@ref), [`get_intersection`](@ref),
-[`get_face_bounding_volume`](@ref)
 """
 
 struct BoundingVolume <: SearchableGeometry
