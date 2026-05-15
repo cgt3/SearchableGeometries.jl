@@ -59,7 +59,7 @@ const DEFAULT_BV_POINT_TOL = 1e-15
 """
 SearchableGeometry
 
-Abstract supertype for searchable geometric objects supported by 'SearchableGeometries.jl'.
+Abstract supertype for searchable geometric objects that canb be queried by the package's public API.
 Concreate subtypes currently include `BoundingVolume` and `Ball`.
 """
 abstract type SearchableGeometry end
