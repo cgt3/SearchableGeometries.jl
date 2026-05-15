@@ -493,34 +493,22 @@ function get_closest_point(pt::Vector{<:Real}, query_plane::Hyperplane)
     return pt - dot(query_plane.n, pt - query_plane.point) * query_plane.n
 end
 
-function get_furthest_pt(bv::BoundingVolume, n::Vector{<:Real}; tol=DEFAULT_BV_POINT_TOL::Real)
+function get_furthest_pt(bv::BoundingVolume, n::Vector{<:Real})
     if length(n) != length(bv.lb)
         throw("SearchableGeometries.get_furthest_pt: normal vector dimension($(length(n))) does not match bounding volume dimension($(length(bv.lb)))")
-    end
-
-    if iszero(norm(n))
-        throw("SearchableGeometries.get_furthest_pt: normal vector must be nonzero")
     end
 
     T = promote_type(eltype(bv.lb), eltype(bv.ub), eltype(n))
     pt = similar(bv.lb, T)
 
     for i in eachindex(n)
-        if n[i] > tol
-            pt[i] = bv.ub[i]
-        elseif n[i] < -tol
-            pt[i] = bv.lb[i]
-        else
-            # n[i] is approximately zero, so either bound gives the same dot product.
-            # Pick ub to make the result deterministic.
-            pt[i] = bv.ub[i]
-        end
+        pt[i] = n[i] >= 0 ? bv.ub[i] : bv.lb[i]
     end
 
     return pt
 end
 
-function get_antifurthest_pt(bv::BoundingVolume, n::Vector{<:Real}; tol=DEFAULT_BV_POINT_TOL::Real)
+function get_antifurthest_pt(bv::BoundingVolume, n::Vector{<:Real})
     if length(n) != length(bv.lb)
         throw("SearchableGeometries.get_antifurthest_pt: normal vector dimension($(length(n))) does not match bounding volume dimension($(length(bv.lb)))")
     end
@@ -529,15 +517,7 @@ function get_antifurthest_pt(bv::BoundingVolume, n::Vector{<:Real}; tol=DEFAULT_
     pt = similar(bv.lb, T)
 
     for i in eachindex(n)
-        if n[i] > tol
-            pt[i] = bv.lb[i]
-        elseif n[i] < -tol
-            pt[i] = bv.ub[i]
-        else
-            # n[i] is approximately zero, so either bound gives the same dot product.
-            # Pick lb to make this opposite of get_furthest_point.
-            pt[i] = bv.lb[i]
-        end
+        pt[i] = n[i] >= 0 ? bv.lb[i] : bv.ub[i]
     end
 
     return pt
@@ -554,13 +534,16 @@ function intersects(bv::BoundingVolume, query_plane::Hyperplane; include_boundar
         throw("SearchableGeometries.Hyperplane: bounding volume dimension($(length(bv.lb))) does not match hyperplane embedding dimension($(query_plane.embedding_dim))")
     end
 
+    pt = query_plane.point
+    n = query_plane.n
+
     # Compute the furthest and antifurthest points
-    furthest_pt = get_furthest_pt(bv, query_plane.n; tol=tol)
-    antifurthest_pt = get_antifurthest_pt(bv, query_plane.n; tol=tol)
+    furthest_pt = get_furthest_pt(bv, n)
+    antifurthest_pt = get_antifurthest_pt(bv, n)
 
     # Compute the minimum and maximum signed offsets over the BV
-    smin = dot(query_plane.n, antifurthest_pt - query_plane.point)
-    smax = dot(query_plane.n, furthest_pt - query_plane.point)
+    smin = dot(n, antifurthest_pt - pt)
+    smax = dot(n, furthest_pt - pt)
 
     if include_boundary
         # The hyperplane intersects the bounding volume if 0 is in the interval [smin, smax]
@@ -592,60 +575,43 @@ function tighten_bv_bounds(bv::BoundingVolume, query_plane::Hyperplane; tol=DEFA
     T = promote_type(eltype(bv.lb), eltype(query_plane.point), eltype(query_plane.n), typeof(tol))
 
     n = query_plane.n
+    is_active = query_plane.is_active
     c0 = dot(n, query_plane.point)
 
-    new_lb = copy(bv.lb)
-    new_ub = copy(bv.ub)
+    new_lb = T.(copy(bv.lb))
+    new_ub = T.(copy(bv.ub))
 
-    # Use furthest and anti-furthest points instead of signed_extrema
-    f_pt = get_furthest_pt(bv, n; tol=tol)
-    af_pt = get_antifurthest_pt(bv, n; tol=tol)
+    # Compute the furthest and antifurthest points
+    f_pt = get_furthest_pt(bv, n)
+    af_pt = get_antifurthest_pt(bv, n)
 
-    # These are the extrema of dot(n, x) over the full BV
+    # Compute the minimum and maximum signed offsets over the BV
     total_min = dot(n, af_pt)
     total_max = dot(n, f_pt)
 
     for i in eachindex(bv.lb)
-        ni = n[i]
-
-        # If the plane does not depend on coordinate i,
-        # then x_i is unconstrained by the plane.
-        if abs(ni) <= tol
+        # If the plane does not depend on coordinate i, skip
+        if !is_active[i]
             continue
         end
 
-        # Compute min/max contribution from all coordinates except i.
-        #
-        # Old version looped over every j != i.
-        # New version subtracts the i-th contribution from the total extrema.
+        ni = n[i]
+
+        # Compute min/max contribution from all coordinates except i
         rest_min = total_min - ni * af_pt[i]
         rest_max = total_max - ni * f_pt[i]
 
         # We want values of x_i = t such that:
-        #
         #   ni * t + rest = c0
-        #
-        # where rest can vary in [rest_min, rest_max].
+        # where rest is in [rest_min, rest_max]
         t1 = (c0 - rest_max) / ni
         t2 = (c0 - rest_min) / ni
 
-        feasible_low = min(t1, t2)
-        feasible_high = max(t1, t2)
+        t_lb = ni > 0 ? t1 : t2
+        t_ub = ni > 0 ? t2 : t1
 
-        # Intersect feasible interval with original BV interval
-        tightened_lb_i = max(bv.lb[i], feasible_low)
-        tightened_ub_i = min(bv.ub[i], feasible_high)
-
-        # Since we checked intersection at the top, this should only happen
-        # from numerical noise. Collapse tiny violations to a point.
-        if tightened_lb_i > tightened_ub_i
-            mid = (tightened_lb_i + tightened_ub_i) / 2
-            tightened_lb_i = mid
-            tightened_ub_i = mid
-        end
-
-        new_lb[i] = tightened_lb_i
-        new_ub[i] = tightened_ub_i
+        new_lb[i] = max(bv.lb[i], t_lb)
+        new_ub[i] = min(bv.ub[i], t_ub)
     end
 
     return BoundingVolume(new_lb, new_ub; tol=tol)
@@ -673,13 +639,18 @@ function get_closest_point(bv::BoundingVolume, query_plane::Hyperplane; tol=DEFA
         throw("SearchableGeometries.Hyperplane: bounding volume dimension($(length(bv.lb))) does not match hyperplane embedding dimension($(query_plane.embedding_dim))")
     end
 
+    n = query_plane.n
+    pt = query_plane.point
+    is_active = query_plane.is_active
+    c = dot(n, pt)
+
     # Compute the furthest and antifurthest points
-    f_pt = get_furthest_pt(bv, query_plane.n; tol=tol)
-    af_pt = get_antifurthest_pt(bv, query_plane.n; tol=tol)
+    f_pt = get_furthest_pt(bv, n)
+    af_pt = get_antifurthest_pt(bv, n)
 
     # Compute the minimum and maximum signed offsets over the BV
-    smin = dot(query_plane.n, af_pt - query_plane.point)
-    smax = dot(query_plane.n, f_pt - query_plane.point)
+    smin = dot(n, af_pt - pt)
+    smax = dot(n, f_pt - pt)
 
     # Case 1: the BV intersects the plane.
     # Then the closest distance is 0, so we return the lexicographically
@@ -688,39 +659,55 @@ function get_closest_point(bv::BoundingVolume, query_plane::Hyperplane; tol=DEFA
         T = promote_type(eltype(bv.lb), eltype(query_plane.point), eltype(query_plane.n), typeof(tol))
         closest_pt = Vector{T}(undef, length(bv.lb))
 
-        # Plane equation: dot(n, x) = c
-        c = dot(query_plane.n, query_plane.point)
+        # Precompute min/max contribution from each coordinate.
+        #
+        # For active coordinates:
+        #   min contribution is n[k] * af_pt[k]
+        #   max contribution is n[k] * f_pt[k]
+        #
+        # For inactive coordinates:
+        #   contribution is zero because the plane does not depend on them.
+        d = length(bv.lb)
+
+        min_contrib = zeros(T, d)
+        max_contrib = zeros(T, d)
+
+        for k in eachindex(bv.lb)
+            if !is_active[k]
+                continue
+            end
+
+            min_contrib[k] = n[k] * af_pt[k]
+            max_contrib[k] = n[k] * f_pt[k]
+        end
+
+        # suffix_min[j] is the minimum contribution from coordinates j, ..., d.
+        # suffix_max[j] is the maximum contribution from coordinates j, ..., d.
+        suffix_min = zeros(T, d + 1)
+        suffix_max = zeros(T, d + 1)
+
+        for k in d:-1:1
+            suffix_min[k] = suffix_min[k+1] + min_contrib[k]
+            suffix_max[k] = suffix_max[k+1] + max_contrib[k]
+        end
 
         # Contribution from coordinates that have already been fixed
         prefix_sum = zero(T)
 
         for j in eachindex(bv.lb)
-            nj = query_plane.n[j]
 
             # Compute the smallest and largest possible contribution
             # from the remaining coordinates j+1, ..., end
-            rem_min = zero(T)
-            rem_max = zero(T)
+            rem_min = suffix_min[j+1]
+            rem_max = suffix_max[j+1]
 
-            for k in (j+1):length(bv.lb)
-                nk = query_plane.n[k]
-
-                if nk > tol
-                    rem_min += nk * bv.lb[k]
-                    rem_max += nk * bv.ub[k]
-                elseif nk < -tol
-                    rem_min += nk * bv.ub[k]
-                    rem_max += nk * bv.lb[k]
-                end
-                # If nk == 0, coordinate k does not affect the plane equation
-            end
-
-            if abs(nj) <= tol
-                # This coordinate does not affect the plane equation.
-                # To get the lexicographically smallest feasible point,
-                # choose the smallest allowed value.
+            # If the plane does not depend on coordinate j, choose the smallest
+            # allowed value to get the lexicographically smallest feasible point.
+            if !is_active[j]
                 closest_pt[j] = bv.lb[j]
             else
+                nj = n[j]
+
                 # Need:
                 #   prefix_sum + nj*x[j] + remaining_contribution = c
                 #
@@ -732,18 +719,13 @@ function get_closest_point(bv::BoundingVolume, query_plane::Hyperplane; tol=DEFA
                 t1 = rhs_low / nj
                 t2 = rhs_high / nj
 
-                feasible_low = max(bv.lb[j], min(t1, t2))
-                feasible_high = min(bv.ub[j], max(t1, t2))
-
-                if feasible_low > feasible_high + tol
-                    throw("SearchableGeometries.Hyperplane: failed to construct a feasible closest point in the BV-plane intersection")
-                end
+                t_lb = nj > 0 ? t1 : t2
 
                 # Lexicographically smallest feasible choice
-                closest_pt[j] = feasible_low
+                closest_pt[j] = max(bv.lb[j], t_lb)
             end
 
-            prefix_sum += nj * closest_pt[j]
+            prefix_sum += n[j] * closest_pt[j]
         end
 
         return closest_pt
@@ -756,8 +738,8 @@ function get_closest_point(bv::BoundingVolume, query_plane::Hyperplane; tol=DEFA
 
         # Coordinates with n[i] ≈ 0 do not affect distance to the plane.
         # Choose lb to get the lexicographically smallest closest point.
-        for i in eachindex(query_plane.n)
-            if abs(query_plane.n[i]) <= tol
+        for i in eachindex(n)
+            if !is_active[i]
                 closest_pt[i] = bv.lb[i]
             end
         end
@@ -771,8 +753,8 @@ function get_closest_point(bv::BoundingVolume, query_plane::Hyperplane; tol=DEFA
 
     # Coordinates with n[i] ≈ 0 do not affect distance to the plane.
     # Choose lb to get the lexicographically smallest closest point.
-    for i in eachindex(query_plane.n)
-        if abs(query_plane.n[i]) <= tol
+    for i in eachindex(n)
+        if !is_active[i]
             closest_pt[i] = bv.lb[i]
         end
     end
@@ -791,23 +773,27 @@ function get_furthest_point(bv::BoundingVolume, query_plane::Hyperplane; tol=DEF
         throw("SearchableGeometries.Hyperplane: bounding volume dimension($(length(bv.lb))) does not match hyperplane embedding dimension($(query_plane.embedding_dim))")
     end
 
+    n = query_plane.n
+    pt = query_plane.point
+    is_active = query_plane.is_active
+
     # Compute the furthest and antifurthest points
-    f_pt = get_furthest_pt(bv, query_plane.n; tol=tol)
-    af_pt = get_antifurthest_pt(bv, query_plane.n; tol=tol)
+    f_pt = get_furthest_pt(bv, n)
+    af_pt = get_antifurthest_pt(bv, n)
 
     # Compute the minimum and maximum signed offsets over the BV
-    smin = dot(query_plane.n, af_pt - query_plane.point)
-    smax = dot(query_plane.n, f_pt - query_plane.point)
+    smin = dot(n, af_pt - pt)
+    smax = dot(n, f_pt - pt)
 
     # Case 1: If the antifurthest point is strictly farther from the plane,
     # return it as the furthest point from the plane.
     if abs(smin) > abs(smax) + tol
         furthest_pt = copy(af_pt)
 
-        # Coordinates with n[i] ≈ 0 do not affect distance to the plane.
+        # Coordinates with n[i] == 0 do not affect distance to the plane.
         # Choose lb to get the lexicographically smallest furthest point.
-        for i in eachindex(query_plane.n)
-            if abs(query_plane.n[i]) <= tol
+        for i in eachindex(n)
+            if !is_active[i]
                 furthest_pt[i] = bv.lb[i]
             end
         end
@@ -820,10 +806,10 @@ function get_furthest_point(bv::BoundingVolume, query_plane::Hyperplane; tol=DEF
     if abs(smax) > abs(smin) + tol
         furthest_pt = copy(f_pt)
 
-        # Coordinates with n[i] ≈ 0 do not affect distance to the plane.
+        # Coordinates with n[i] == 0 do not affect distance to the plane.
         # Choose lb to get the lexicographically smallest furthest point.
-        for i in eachindex(query_plane.n)
-            if abs(query_plane.n[i]) <= tol
+        for i in eachindex(n)
+            if !is_active[i]
                 furthest_pt[i] = bv.lb[i]
             end
         end
@@ -836,8 +822,8 @@ function get_furthest_point(bv::BoundingVolume, query_plane::Hyperplane; tol=DEF
     af_candidate = copy(af_pt)
     f_candidate = copy(f_pt)
 
-    for i in eachindex(query_plane.n)
-        if abs(query_plane.n[i]) <= tol
+    for i in eachindex(n)
+        if !is_active[i]
             af_candidate[i] = bv.lb[i]
             f_candidate[i] = bv.lb[i]
         end

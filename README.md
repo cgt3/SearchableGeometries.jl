@@ -99,5 +99,5 @@ ball_subspace = Ball([0, 0, 0], 1; active_indices=true, indices=[1, 3])
 
 # Point [0.5, 100, 0.5] is "contained" because axis 2 is ignored
 pt = [0.5, 100, 0.5] 
-println(isContained(ball_subspace, pt)) # true
+println(isContained(ball_subspace, pt)) # false
 ```
