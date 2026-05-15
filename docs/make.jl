@@ -14,7 +14,7 @@ makedocs(
     sitename="SearchableGeometries.jl",
     format=Documenter.HTML(;
         canonical="https://cgt3.github.io/SearchableGeometries.jl",
-        edit_link="main",
+        edit_link=get(ENV, "GITHUB_REF_TYPE", "") == "tag" ? :commit : "dev",
         assets=String[],
     ),
     pages=[
@@ -25,5 +25,6 @@ makedocs(
 
 deploydocs(;
     repo="github.com/cgt3/SearchableGeometries.jl",
-    devbranch="main",
+    devbranch="dev",
+    devurl="dev"
 )

@@ -493,7 +493,7 @@ function get_closest_point(pt::Vector{<:Real}, query_plane::Hyperplane)
     return pt - dot(query_plane.n, pt - query_plane.point) * query_plane.n
 end
 
-function get_furthest_pt(bv::BoundingVolume, n::AbstractVector{<:Real}; tol=DEFAULT_BV_POINT_TOL::Real)
+function get_furthest_pt(bv::BoundingVolume, n::Vector{<:Real}; tol=DEFAULT_BV_POINT_TOL::Real)
     if length(n) != length(bv.lb)
         throw("SearchableGeometries.get_furthest_pt: normal vector dimension($(length(n))) does not match bounding volume dimension($(length(bv.lb)))")
     end
@@ -520,7 +520,7 @@ function get_furthest_pt(bv::BoundingVolume, n::AbstractVector{<:Real}; tol=DEFA
     return pt
 end
 
-function get_antifurthest_pt(bv::BoundingVolume, n::AbstractVector{<:Real}; tol=DEFAULT_BV_POINT_TOL::Real)
+function get_antifurthest_pt(bv::BoundingVolume, n::Vector{<:Real}; tol=DEFAULT_BV_POINT_TOL::Real)
     if length(n) != length(bv.lb)
         throw("SearchableGeometries.get_antifurthest_pt: normal vector dimension($(length(n))) does not match bounding volume dimension($(length(bv.lb)))")
     end
@@ -705,17 +705,17 @@ function get_closest_point(bv::BoundingVolume, query_plane::Hyperplane; tol=DEFA
             for k in (j+1):length(bv.lb)
                 nk = query_plane.n[k]
 
-                if nk > 0
+                if nk > tol
                     rem_min += nk * bv.lb[k]
                     rem_max += nk * bv.ub[k]
-                elseif nk < 0
+                elseif nk < -tol
                     rem_min += nk * bv.ub[k]
                     rem_max += nk * bv.lb[k]
                 end
                 # If nk == 0, coordinate k does not affect the plane equation
             end
 
-            if iszero(nj)
+            if abs(nj) <= tol
                 # This coordinate does not affect the plane equation.
                 # To get the lexicographically smallest feasible point,
                 # choose the smallest allowed value.
