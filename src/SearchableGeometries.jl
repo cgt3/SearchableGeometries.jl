@@ -6,6 +6,9 @@ intersection, containment, and bounding-volume computations.
 
 The package currently provides three main geometric objects:
 
+- [`BoundingVolume`](@ref): an axis-aligned hyperrectangle described by lower
+  and upper coordinate bounds.
+
 # Boundary convention
 
 Many predicates accept `include_boundary=true`. When `true`, points on the
@@ -42,38 +45,90 @@ import Base.getindex
 const DEFAULT_BV_POINT_TOL = 1e-15
 
 """
-SearchableGeometry
+    SearchableGeometry
 
-Abstract supertype for searchable geometric objects that canb be queried by the package's public API.
-Concreate subtypes currently include `BoundingVolume` and `Ball`.
+Abstract supertype for geometric objects that can be queried by the package.
+
+Concrete subtypes currently include:
+
+- [`BoundingVolume`](@ref)
+- [`Ball`](@ref)
+- [`Hyperplane`](@ref)
+
+This type is mainly useful for dispatch and for documenting the shared geometric
+interface. Users usually construct one of the concrete subtypes directly.
+
+# See also
+
+[`BoundingVolume`](@ref), [`Ball`](@ref), [`Hyperplane`](@ref)
 """
 abstract type SearchableGeometry end
 
 
 # Bounding Volumes ----------------------------------------------------------------------
-"""
-BoundingVolume(lb, ub; tol=DEFAULT_BV_POINT_TOL)
+raw"""
+    BoundingVolume()
+    BoundingVolume(lb, ub; tol=DEFAULT_BV_POINT_TOL)
 
-Construct a bounding volume with lower bounds `lb` and upper bounds `ub`.
+Construct an axis-aligned bounding volume.
+
+A `BoundingVolume` represents the hyperrectangle
+
+```math
+\{x \in \mathbb{R}^n : lb_i \le x_i \le ub_i \text{ for all } i\}.
+```
+
+The lower and upper bounds are stored in the fields `lb` and `ub`. Dimensions
+where `lb[i]` and `ub[i]` are equal up to `tol` are treated as inactive. This
+allows the same type to represent full-dimensional boxes, lower-dimensional
+faces, line segments, and points.
+
+Calling `BoundingVolume()` constructs an empty bounding volume. Empty bounding
+volumes are used as the return value for intersections that do not exist.
 
 # Arguments
-- `lb::Vector{<:Real}`: Lower bounds of the bounding volume.
-- `ub::Vector{<:Real}`: Upper bounds of the bounding volume.
-- `tol::Real`: Tolerance for determining active dimensions.
 
-# Returns
-- `BoundingVolume`: The constructed bounding volume.
+- `lb::Vector{<:Real}`: lower coordinate bounds.
+- `ub::Vector{<:Real}`: upper coordinate bounds.
+- `tol::Real`: tolerance used to identify inactive dimensions.
+
+# Fields
+
+- `lb`: lower bounds.
+- `ub`: upper bounds.
+- `is_empty`: whether the object represents the empty set.
+- `dim`: active geometric dimension.
+- `active_dim`: indices whose lower and upper bounds differ by at least `tol`.
+- `inactive_dim`: indices whose lower and upper bounds are equal up to `tol`.
+- `is_active`: Boolean mask indicating active coordinates.
 
 # Throws
-- `ArgumentError`: If `lb` and `ub` have different dimensions.
-- `ArgumentError`: If `lb` > `ub`.
+
+Throws an error if `lb` and `ub` have different lengths, or if any coordinate
+satisfies `lb[i] > ub[i]`.
 
 # Examples
+
 ```julia
 using SearchableGeometries
 
-bv = BoundingVolume([0, 0], [1, 1])
+bv = BoundingVolume([0.0, 0.0], [2.0, 1.0])
+bv.dim          # 2
+bv.active_dim   # [1, 2]
 ```
+
+A lower-dimensional bounding volume can represent a line segment:
+
+```julia
+segment = BoundingVolume([0.0, 0.0], [0.0, 1.0])
+segment.dim          # 1
+segment.inactive_dim # [1]
+```
+
+# See also
+
+[`Ball`](@ref), [`Hyperplane`](@ref), [`get_intersection`](@ref),
+[`get_face_bounding_volume`](@ref)
 """
 
 struct BoundingVolume <: SearchableGeometry

@@ -11,3 +11,5 @@ SearchableGeometries
 ## Main objects
 
 SearchableGeometries.jl currently provides:
+
+- [`BoundingVolume`](@ref)
