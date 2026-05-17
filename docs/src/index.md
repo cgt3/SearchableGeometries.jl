@@ -4,30 +4,41 @@
 CurrentModule = SearchableGeometries
 ```
 
-```@docs
-SearchableGeometries
+SearchableGeometries.jl provides geometric tools for building searchable geometric structures.
+
+The long-term goal is to support spatial and graph-based search structures such as kd-trees, ball trees, bounding-volume hierarchies, and neighborhood graphs. The current package focuses on the geometric primitives needed to make those search routines possible.
+
+## Introduction
+
+Search algorithms often need to answer geometric questions quickly:
+
+- Is this point inside this region?
+- Do these two regions intersect?
+- What is the closest point in a region to a query point?
+- What is the furthest point in a region from a query object?
+- Can a bounding volume be tightened around an intersection?
+
+SearchableGeometries.jl provides types and functions for answering these questions.
+
+## Example
+
+```julia
+using SearchableGeometries
+
+bv = BoundingVolume([0.0, 0.0], [2.0, 1.0])
+pt = [3.0, 0.5]
+
+closest_pt = get_closest_point(bv, pt)
 ```
 
-SearchableGeometries.jl is designed around the idea of making geometric objects searchable.
+## Features
 
-The long-term goal is to support spatial and geometric search structures, such as graph-based search and tree-based search methods. For these search routines to work, the package first needs reliable geometric primitives: objects that can answer containment, intersection, closest-point, furthest-point, and bounding queries.
+The current package provides:
 
-At the moment, the package focuses on the geometry layer.
-
-## Geometry Types
-
-SearchableGeometries.jl currently provides:
-
-- [`BoundingVolume`](@ref)
-- [`Ball`](@ref)
-- [`Hyperplane`](@ref)
-
-## Common Geometric Operations
-
-The main geometric operations are:
-
-- [`is_contained`](@ref): test whether a point or object lies inside another object.
-- [`intersects`](@ref): test whether two objects intersect.
-- [`get_intersection`](@ref): compute a bounding representation of an intersection.
-- [`get_closest_point`](@ref): find a closest point in a bounding volume or on a hyperplane.
-- [`get_furthest_point`](@ref): find a furthest point in a bounding volume.
+- axis-aligned bounding volumes;
+- ``p``-norm balls;
+- affine hyperplanes;
+- containment tests;
+- intersection tests;
+- closest-point and furthest-point queries;
+- bounding-volume tightening routines.
