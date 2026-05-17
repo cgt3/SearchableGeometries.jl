@@ -42,3 +42,15 @@ The current package provides:
 - intersection tests;
 - closest-point and furthest-point queries;
 - bounding-volume tightening routines.
+
+## Manual Outline
+
+- [Getting Started](@ref getting_started)
+- [Bounding Volumes](@ref bounding_volumes_manual)
+- [Balls](@ref balls_manual)
+- [Hyperplanes](@ref hyperplanes_manual)
+- [Cones](@ref cones_manual)
+- [Geometric Search](@ref geometric_search)
+
+
+

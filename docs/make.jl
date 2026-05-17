@@ -27,6 +27,7 @@ makedocs(
             "Bounding Volumes" => "man/bounding_volumes.md",
             "Balls" => "man/balls.md",
             "Hyperplanes" => "man/hyperplanes.md",
+            "Cones" => "man/cones.md",
         ],
         #=
         "Library" => [
