@@ -19,7 +19,12 @@ makedocs(
     ),
     pages=[
         "SearchableGeometries Documentation" => "index.md",
-        "API" => "api.md"
+        "Geometry Types" => [
+            "BoundingVolume" => "bounding_volume.md",
+            "Ball" => "ball.md",
+            "Hyperplane" => "hyperplane.md"
+        ],
+        "API Reference" => "api.md",
     ],
 )
 
