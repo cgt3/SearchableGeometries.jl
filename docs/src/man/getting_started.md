@@ -200,3 +200,4 @@ After this page, a good order is:
 - [Bounding Volumes](@ref bounding_volumes_manual)
 - [Balls](@ref balls_manual)
 - [Hyperplanes](@ref hyperplanes_manual)
+- [Cones](@ref cones_manual)
