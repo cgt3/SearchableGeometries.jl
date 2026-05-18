@@ -196,8 +196,8 @@ end
 
 After this page, a good order is:
 
-- [Geometric Search](@ref geometric_search)
 - [Bounding Volumes](@ref bounding_volumes_manual)
 - [Balls](@ref balls_manual)
 - [Hyperplanes](@ref hyperplanes_manual)
 - [Cones](@ref cones_manual)
+- [Geometric Search](@ref geometric_search)

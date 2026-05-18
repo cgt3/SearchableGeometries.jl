@@ -28,21 +28,19 @@ makedocs(
             "Balls" => "man/balls.md",
             "Hyperplanes" => "man/hyperplanes.md",
             "Cones" => "man/cones.md",
-        ],
-        #=
-        "Library" => [
+        ], "Library" => [
             "API" => "lib/api.md",
             "Geometry Types" => [
                 "Bounding Volumes" => "lib/types/bounding_volumes.md",
                 "Balls" => "lib/types/balls.md",
                 "Hyperplanes" => "lib/types/hyperplanes.md",
             ],
-            "Operations" => [
-                "Containment" => "lib/operations/containment.md",
-                "Intersection" => "lib/operations/intersection.md",
-                "Closest and Furthest Points" => "lib/operations/closest_and_furthest_points.md"
-            ],
-        ],=#
+            # "Operations" => [
+            #     "Containment" => "lib/operations/containment.md",
+            #     "Intersection" => "lib/operations/intersection.md",
+            #     "Closest and Furthest Points" => "lib/operations/closest_and_furthest_points.md"
+            # ],
+        ],
     ],
 )
 
