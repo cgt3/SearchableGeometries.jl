@@ -38,10 +38,4 @@ get_furthest_pt
 get_antifurthest_pt
 ```
 
-## Related operations
-<!--
--[`BoundingVolume`](@ref def_BoundingVolume)
--[`Containment`](@ref)
--[`Intersection`](@ref)
--[`Closest and Furthest Points`](@ref)
--->
+

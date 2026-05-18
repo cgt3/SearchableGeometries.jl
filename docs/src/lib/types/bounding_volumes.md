@@ -33,12 +33,4 @@ face_index_to_spatial_index
 get_face_bounding_volume
 ```
 
-## Related operations
 
-<!--
--[`Ball`](@ref def_Ball)
--[`Hyperplane`](@ref def_Hyperplane)
--[`Containment`](@ref)
--[`Intersection`](@ref)
--[`Closest and Furthest Points`](@ref)
--->
