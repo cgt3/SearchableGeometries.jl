@@ -23,11 +23,11 @@ makedocs(
         "Home" => "index.md",
         "Manual" => [
             "Getting Started" => "man/getting_started.md",
-            "Geometric Search" => "man/geometric_search.md",
             "Bounding Volumes" => "man/bounding_volumes.md",
             "Balls" => "man/balls.md",
             "Hyperplanes" => "man/hyperplanes.md",
             "Cones" => "man/cones.md",
+            "Geometric Search" => "man/geometric_search.md",
         ], "Library" => [
             "API" => "lib/api.md",
             "Geometry Types" => [
