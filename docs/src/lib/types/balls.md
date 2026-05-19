@@ -32,3 +32,8 @@ get_reduced_dim_ball
 tighten_bv_bounds!
 ```
 
+## Related operations
+
+-[`BoundingVolume`](@ref def_BoundingVolume)
+-[`Containment`](@ref)
+-[`Intersection`](@ref)

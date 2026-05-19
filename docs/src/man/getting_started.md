@@ -10,7 +10,7 @@ The package provides geometric objects and query functions that are useful for b
 
 ## Installation
 
-Since `SearchableGeometries.jl` is a registered Julia package, install it from the Julia package manager with:
+`SearchableGeometries.jl` is a registered Julia package and can be installed from the Julia package manager with:
 
 ```julia
 using Pkg
@@ -62,8 +62,8 @@ This creates the rectangle
 You can test whether a point lies inside the bounding volume:
 
 ```julia
-is_contained(bv, [1.0, 0.5])   # true
-is_contained(bv, [3.0, 0.5])   # false
+is_contained(bv, [1.0, 0.5])   # returns true
+is_contained(bv, [3.0, 0.5])   # returns false
 ```
 
 You can also find the closest point in the bounding volume to a query point:
@@ -99,8 +99,8 @@ This creates the Euclidean unit ball centered at the origin:
 You can test point containment:
 
 ```julia
-is_contained(ball, [0.5, 0.5])   # true
-is_contained(ball, [2.0, 0.0])   # false
+is_contained(ball, [0.5, 0.5])   # returns true
+is_contained(ball, [2.0, 0.0])   # returns false
 ```
 
 You can also construct a bounding volume that encloses the ball:
@@ -116,8 +116,8 @@ Balls can also be checked against bounding volumes:
 ```julia
 bv = BoundingVolume([0.5, -0.5], [2.0, 0.5])
 
-intersects(bv, ball)
-get_intersection(bv, ball)
+intersects(bv, ball)        # returns true
+get_intersection(bv, ball)  # returns a new bounding volume (same as bv, since bv contains ball)
 ```
 
 See [Balls](@ref balls_manual) for more details.
@@ -145,25 +145,25 @@ The first vector is a point on the hyperplane. The second vector is a normal vec
 You can test whether a point lies on the hyperplane:
 
 ```julia
-is_contained(plane, [2.0, 2.0])   # true
-is_contained(plane, [2.0, 0.0])   # false
+is_contained(plane, [2.0, 2.0])   # returns true
+is_contained(plane, [2.0, 0.0])   # returns false
 ```
 
 You can also project a point onto the hyperplane:
 
 ```julia
-get_closest_point([2.0, 0.0], plane)
+get_closest_point([2.0, 0.0], plane) 
 ```
 
-For this example, the closest point is `[1.0, 1.0]`.
+For this example, the closest point is approximately`[1.0, 1.0]`.
 
 Hyperplanes can also be checked against bounding volumes:
 
 ```julia
 bv = BoundingVolume([0.0, 0.0], [2.0, 2.0])
 
-intersects(bv, plane)
-get_intersection(bv, plane)
+intersects(bv, plane) # returns true
+get_intersection(bv, plane) # returns a new bounding volume (same as bv, since the intersection is contained in bv)
 ```
 
 See [Hyperplanes](@ref hyperplanes_manual) for more details.
