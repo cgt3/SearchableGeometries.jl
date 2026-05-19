@@ -35,5 +35,5 @@ tighten_bv_bounds!
 ## Related operations
 
 -[`BoundingVolume`](@ref def_BoundingVolume)
--[`Containment`](@ref)
--[`Intersection`](@ref)
+-[`Containment`](@ref containment)
+-[`Intersection`](@ref intersection)
