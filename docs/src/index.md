@@ -52,5 +52,12 @@ The current package provides:
 - [Cones](@ref cones_manual)
 - [Geometric Search](@ref geometric_search)
 
+## Library Outline
+
+- [API Reference](@ref)
+- [BoundingVolume](@ref def_BoundingVolume)
+- [Ball](@ref def_Ball)
+- [Hyperplane](@ref def_Hyperplane)
+
 
 

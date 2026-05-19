@@ -57,3 +57,12 @@ intersects(bv, ball)
 get_intersection(bv, ball)
 ```
 
+## See also
+
+- [`Ball`](@ref def_Ball)
+- [`BoundingVolume`](@ref def_BoundingVolume)
+- [`is_contained`](@ref)
+- [`intersects`](@ref)
+- [`get_intersection`](@ref)
+- [`get_reduced_dim_ball`](@ref)
+- [`tighten_bv_bounds!`](@ref)

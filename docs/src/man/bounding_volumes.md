@@ -34,3 +34,8 @@ get_closest_point(bv, [3.0, 0.5])
 get_furthest_point(bv, [3.0, 0.5])
 ```
 
+## See also
+- [BoundingVolume](@ref def_BoundingVolume)
+- [is_contained](@ref)
+- [intersects](@ref)
+- [get_intersection](@ref)

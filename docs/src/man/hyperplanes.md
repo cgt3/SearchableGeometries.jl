@@ -64,4 +64,12 @@ get_closest_point(bv, plane)
 get_furthest_point(bv, plane)
 ```
 
+## See also
 
+- [`Hyperplane`](@ref def_Hyperplane)
+- [`BoundingVolume`](@ref def_BoundingVolume)
+- [`is_contained`](@ref)
+- [`intersects`](@ref)
+- [`get_intersection`](@ref)
+- [`get_closest_point`](@ref)
+- [`get_furthest_point`](@ref)
