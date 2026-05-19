@@ -1,8 +1,8 @@
+# [BoundingVolume](@id def_BoundingVolume)
+
 ```@meta
 CurrentModule = SearchableGeometries
 ```
-
-# [BoundingVolume](@id def_BoundingVolume)
 
 ```@docs
 BoundingVolume
