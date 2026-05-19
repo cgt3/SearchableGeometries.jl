@@ -89,8 +89,7 @@ Many methods accept keyword arguments such as `include_boundary` and `tol`.
 
 # See also
 
-[`intersects`](@ref), [`get_intersection`](@ref), [`BoundingVolume`](@ref),
-[`Ball`](@ref), [`Hyperplane`](@ref)
+[`BoundingVolume`](@ref), [`Ball`](@ref), [`Hyperplane`](@ref)
 """
 function is_contained end
 
@@ -109,8 +108,7 @@ contact counts as an intersection.
 
 # See also
 
-[`is_contained`](@ref), [`get_intersection`](@ref), [`BoundingVolume`](@ref),
-[`Ball`](@ref), [`Hyperplane`](@ref)
+[`BoundingVolume`](@ref), [`Ball`](@ref), [`Hyperplane`](@ref)
 """
 function intersects end
 
@@ -1658,7 +1656,7 @@ end
 @doc raw"""
     get_intersection(bv::BoundingVolume, query_plane::Hyperplane; tol=DEFAULT_BV_POINT_TOL)
 
-Return a bounding volume enclosing ``bv \cap query_plane``.
+Return a bounding volume enclosing ``\operatorname{bv} \cap \operatorname{query\_plane}``.
 
 If the bounding volume does not intersect the hyperplane, this method returns
 `BoundingVolume()`. Otherwise, it returns the result of
@@ -1706,7 +1704,7 @@ end
 Return a point in `bv` closest to `query_plane`.
 
 If `bv` intersects the hyperplane, the closest distance is zero, and this method
-returns a deterministic feasible point in ``bv \cap query_plane``. If the bounding
+returns a deterministic feasible point in ``\operatorname{bv} \cap \operatorname{query\_plane}``. If the bounding
 volume lies entirely on one side of the hyperplane, the method returns the
 corner of `bv` closest to the hyperplane.
 
