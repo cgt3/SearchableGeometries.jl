@@ -310,7 +310,7 @@ get_closest_point(bv, [0.25, 1.0]) # returns [0.25, 1.0]
 
 # See also 
 
-[`get_furthest_point`](@ref)
+[`get_furthest_point(::BoundingVolume, ::Vector{<:Real})`](@ref)
 """
 function get_closest_point(bv::BoundingVolume, query_pt::Vector{<:Real})
     closest_pt = copy(query_pt)
@@ -354,7 +354,7 @@ get_furthest_point(bv, [0.25, 2.8]) # approximately [2.0, 0.0]
 
 # See also
 
-[`get_closest_point`](@ref)
+[`get_closest_point(::BoundingVolume, ::Vector{<:Real})`](@ref)
 """
 function get_furthest_point(bv::BoundingVolume, query_pt::Vector{<:Real})
     furthest_pt = similar(query_pt)
@@ -403,7 +403,7 @@ is_contained(bv, [1.0, 0.5]; include_boundary=false) # false
 
 # See also
 
-[`intersects`](@ref), [`get_intersection`](@ref)
+[`is_contained(::BoundingVolume, ::BoundingVolume)`](@ref)
 """
 function is_contained(bv::BoundingVolume, query_pt::Vector{<:Real}; include_boundary::Bool=true)
     if (include_boundary && all(bv.lb .<= query_pt .<= bv.ub)) ||
@@ -435,7 +435,7 @@ is_contained(outer, inner) # true
 
 # See also
 
-[`intersects`](@ref), [`get_intersection`](@ref)
+[`is_contained(::BoundingVolume, ::Vector{<:Real})`](@ref)
 """
 function is_contained(bv::BoundingVolume, query_bv::BoundingVolume; include_boundary::Bool=true)
     if (!include_boundary && (all(query_bv.ub .< bv.ub) && all(query_bv.lb .> bv.lb))) ||
@@ -480,7 +480,7 @@ intersects(bv1, bv2; include_boundary=false) # false
 
 # See also
 
-[`is_contained`](@ref), [`get_intersection`](@ref)
+[`get_intersection(::BoundingVolume, ::BoundingVolume)`](@ref)
 """
 function intersects(bv1::BoundingVolume, bv2::BoundingVolume; include_boundary::Bool=true)
     if (include_boundary && (any(bv1.lb .> bv2.ub) || any(bv1.ub .< bv2.lb))) ||
@@ -530,7 +530,7 @@ get_intersection(bv1, bv2)
 
 # See also
 
-[`intersects`](@ref), [`is_contained`](@ref)
+[`intersects(::BoundingVolume, ::BoundingVolume)`](@ref)
 """
 function get_intersection(bv1::BoundingVolume, bv2::BoundingVolume; tol::Real=DEFAULT_BV_POINT_TOL)
     if bv1.is_empty || bv2.is_empty
