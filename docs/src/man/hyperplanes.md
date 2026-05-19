@@ -12,16 +12,16 @@ A hyperplane is represented by a point on the hyperplane and a normal vector.
 
 ## Mathematical definition
 
-A hyperplane with point `p₀` and normal vector `n` represents
+A hyperplane with point `p` and normal vector `n` represents
 
 ```math
-\{x \in \mathbb{R}^n : n^T(x - p_0) = 0\}.
+\{x \in \mathbb{R}^n : n^T(x - p) = 0\}.
 ```
 
 The vector `n` is perpendicular to the hyperplane. The expression
 
 ```math
-n^T(x - p_0)
+n^T(x - p)
 ```
 
 measures the signed offset of a point `x` from the hyperplane. If the value is zero, then the point lies on the hyperplane.
@@ -39,13 +39,13 @@ Hyperplanes are also useful for testing whether a bounding volume crosses a deci
 ```julia
 using SearchableGeometries
 
-# The line x - y = 0 in R²
+# The line x - y = 0
 plane = Hyperplane([0.0, 0.0], [1.0, -1.0])
 
-is_contained(plane, [2.0, 2.0])
-is_contained(plane, [2.0, 0.0])
+is_contained(plane, [2.0, 2.0]) # returns true
+is_contained(plane, [2.0, 0.0]) # returns false
 
-get_closest_point([2.0, 0.0], plane)
+get_closest_point([2.0, 0.0], plane) # returns approximately [1.0, 1.0]
 ```
 
 A hyperplane can also be queried against a bounding volume:
@@ -61,7 +61,7 @@ plane = Hyperplane([1.0, 0.0], [1.0, 1.0])
 intersects(bv, plane)
 get_intersection(bv, plane)
 get_closest_point(bv, plane)
-get_furthest_point(bv, plane)
+get_furthest_point(bv, plane) 
 ```
 
 ## See also
