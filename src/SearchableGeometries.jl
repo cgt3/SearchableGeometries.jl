@@ -694,7 +694,7 @@ segment_ball = Ball([0.0, 0.0], 1.0; p=2, active_indices=true, indices=[1])
 
 # See also
 
-[`BoundingVolume`](@ref), [`get_reduced_dim_ball`](@ref), [`is_contained`](@ref)
+[`BoundingVolume`](@ref), [`Hyperplane`](@ref)
 """
 struct Ball <: SearchableGeometry
     center::Vector                      # center of the ball
@@ -777,10 +777,6 @@ using SearchableGeometries
 ball = Ball([1.0, 2.0], 0.5)
 bv = BoundingVolume(ball) # lb = [0.5, 1.5], ub = [1.5, 2.5]
 ```
-
-# See also
-
-[`Ball`](@ref), [`get_intersection`](@ref)
 """
 function BoundingVolume(ball::Ball; tol::Real=DEFAULT_BV_POINT_TOL)
     lb = ball.center .- ball.radius
@@ -829,7 +825,7 @@ is_contained(ball, [1.0, 0.0]; include_boundary=false) # false
 
 # See also
 
-[`Ball`](@ref), [`BoundingVolume`](@ref), [`intersects`](@ref)
+[`is_contained(::BoundingVolume, ::Ball)`](@ref), [`is_contained(::Ball, ::BoundingVolume)`](@ref)
 """
 function is_contained(ball::Ball, query_pt::Vector{<:Real}; include_boundary::Bool=true, tol::Real=DEFAULT_BV_POINT_TOL)
     if length(query_pt) != ball.embedding_dim
@@ -873,7 +869,7 @@ is_contained(bv, ball) # true
 
 # See also
 
-[`Ball`](@ref), [`BoundingVolume`](@ref), [`intersects`](@ref)
+[`is_contained(::Ball, ::Vector{<:Real})`](@ref), [`is_contained(::Ball, ::BoundingVolume)`](@ref)
 """
 function is_contained(bv::BoundingVolume, query_ball::Ball; include_boundary::Bool=true, tol::Real=DEFAULT_BV_POINT_TOL)
     return is_contained(bv, BoundingVolume(query_ball; tol=tol); include_boundary=include_boundary)
@@ -901,7 +897,7 @@ is_contained(ball, bv) # true
 
 # See also
 
-[`get_furthest_point`](@ref), [`intersects`](@ref)
+[`is_contained(::Ball, ::Vector{<:Real})`](@ref), [`is_contained(::BoundingVolume, ::Ball)`](@ref)
 """
 function is_contained(ball::Ball, query_bv::BoundingVolume; include_boundary::Bool=true)
     furthest_pt = get_furthest_point(query_bv, ball.center)
@@ -940,7 +936,7 @@ intersects(bv, ball) # true, touching at x = 1
 
 # See also
 
-[`get_intersection`](@ref), [`get_closest_point`](@ref)
+[`get_intersection(::BoundingVolume, ::Ball)`](@ref)
 """
 function intersects(bv::BoundingVolume, ball::Ball; include_boundary::Bool=true, tol::Real=DEFAULT_BV_POINT_TOL)
     # First, do the easy checks against the ball's BV:
@@ -1002,7 +998,7 @@ slice.inactive_dim # [2]
 
 # See also
 
-[`Ball`](@ref), [`tighten_bv_bounds!`](@ref)
+[`tighten_bv_bounds!`](@ref)
 """
 function get_reduced_dim_ball(removal_dim::Integer, x_d::Real, ball::Ball)
     if x_d < ball.center[removal_dim] - ball.radius || ball.center[removal_dim] + ball.radius < x_d
@@ -1058,7 +1054,7 @@ changed_lb, changed_ub = tighten_bv_bounds!(bv, ball)
 
 # See also
 
-[`get_intersection`](@ref), [`get_reduced_dim_ball`](@ref)
+[`get_reduced_dim_ball`](@ref)
 """
 function tighten_bv_bounds!(bv::BoundingVolume, ball::Ball; tol::Real=DEFAULT_BV_POINT_TOL)
     if ball.dim == 1
@@ -1179,7 +1175,7 @@ intersection_bv = get_intersection(bv, ball)
 
 # See also
 
-[`intersects`](@ref), [`tighten_bv_bounds!`](@ref)
+[`intersects(::BoundingVolume, ::Ball)`](@ref)
 """
 function get_intersection(bv::BoundingVolume, ball::Ball; tol::Real=DEFAULT_BV_POINT_TOL)
     if !intersects(bv, ball; include_boundary=true, tol=tol)

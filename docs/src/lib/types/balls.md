@@ -1,8 +1,8 @@
+# [Ball](@id def_Ball)
+
 ```@meta
 CurrentModule = SearchableGeometries
 ```
-
-# [Ball](@id def_Ball)
 
 ```@docs
 Ball
@@ -31,9 +31,3 @@ get_intersection(::BoundingVolume, ::Ball)
 get_reduced_dim_ball
 tighten_bv_bounds!
 ```
-
-## Related operations
-
--[`BoundingVolume`](@ref def_BoundingVolume)
--[`Containment`](@ref containment)
--[`Intersection`](@ref intersection)
