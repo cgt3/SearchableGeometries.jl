@@ -1,8 +1,8 @@
+# [Hyperplane](@id def_Hyperplane)
+
 ```@meta
 CurrentModule = SearchableGeometries
 ```
-
-# [Hyperplane](@id def_Hyperplane)
 
 ```@docs
 Hyperplane

@@ -1202,12 +1202,12 @@ end
 @doc raw"""
     Hyperplane(point, n)
 
-Construct an affine hyperplane from a point and a normal vector.
+Construct an affine hyperplane from a point `point` and a normal vector `n`.
 
 The hyperplane is the set
 
 ```math
-\{x \in \mathbb{R}^n : n^T(x - point) = 0\}.
+\{x \in \mathbb{R}^n : n^T(x - \operatorname{point}) = 0\}.
 ```
 
 The constructor normalizes the normal vector, so the stored field `n` has unit
@@ -1239,16 +1239,16 @@ vector.
 ```julia
 using SearchableGeometries
 
-# The line x - y = 0 in R².
+# The line x - y = 0 in 2D space.
 plane = Hyperplane([0.0, 0.0], [1.0, -1.0])
 
-# The plane z = 2 in R³.
+# The plane z = 2 in 3D space.
 zplane = Hyperplane([0.0, 0.0, 2.0], [0.0, 0.0, 1.0])
 ```
 
 # See also
 
-[`is_contained`](@ref), [`intersects`](@ref), [`get_closest_point`](@ref)
+[`BoundingVolume`](@ref), [`Ball`](@ref)
 """
 struct Hyperplane <: SearchableGeometry
     point::Vector
@@ -1294,7 +1294,7 @@ A point is contained in a hyperplane if its signed offset from the plane is zero
 up to tolerance:
 
 ```math
-|n^T(query\_pt - point)| \le tol.
+|n^T(\operatorname{query\_pt} - \operatorname{point})| \le \operatorname{tol}.
 ```
 
 Because the constructor normalizes `n`, this signed offset is a signed Euclidean
@@ -1326,7 +1326,7 @@ is_contained(plane, [2.0, 0.0]) # false
 
 # See also
 
-[`Hyperplane`](@ref), [`get_closest_point`](@ref)
+[`get_closest_point(::Vector{<:Real}, ::Hyperplane)`](@ref)
 """
 function is_contained(plane::Hyperplane, query_pt::Vector{<:Real}; tol::Real=DEFAULT_BV_POINT_TOL)
     if length(query_pt) != plane.embedding_dim
@@ -1341,10 +1341,10 @@ end
 
 Project a point onto a hyperplane.
 
-For a hyperplane with unit normal `n` and point `p0`, the closest point is
+For a hyperplane with unit normal `n` and point `p`, the closest point is
 
 ```math
-pt - n^T(pt - p0)n.
+pt - n^T(pt - p)n.
 ```
 
 This is the orthogonal projection of `pt` onto `query_plane`.
@@ -1374,7 +1374,7 @@ get_closest_point([2.0, 0.0], plane) # approximately [1.0, 1.0]
 
 # See also
 
-[`Hyperplane`](@ref), [`is_contained`](@ref)
+[`get_furthest_pt`](@ref), [`get_antifurthest_pt`](@ref)
 """
 function get_closest_point(pt::Vector{<:Real}, query_plane::Hyperplane)
     if length(pt) != query_plane.embedding_dim
@@ -1400,7 +1400,7 @@ axis-aligned bounding volume.
 # Arguments
 
 - `bv::BoundingVolume`: bounding volume to search.
-- `n::AbstractVector{<:Real}`: nonzero direction vector.
+- `n::Vector{<:Real}`: nonzero direction vector.
 - `tol::Real`: tolerance used to treat small coefficients as zero.
 
 # Returns
@@ -1422,7 +1422,7 @@ get_furthest_pt(bv, [1.0, -1.0]) # [2.0, 0.0]
 
 # See also
 
-[`get_antifurthest_pt`](@ref), [`intersects`](@ref), [`Hyperplane`](@ref)
+[`get_antifurthest_pt`](@ref)
 """
 function get_furthest_pt(bv::BoundingVolume, n::Vector{<:Real})
     if length(n) != length(bv.lb)
@@ -1451,7 +1451,7 @@ bound when `n[i]` is negative.
 # Arguments
 
 - `bv::BoundingVolume`: bounding volume to search.
-- `n::AbstractVector{<:Real}`: direction vector.
+- `n::Vector{<:Real}`: direction vector.
 - `tol::Real`: tolerance used to treat small coefficients as zero.
 
 # Returns
@@ -1469,7 +1469,7 @@ get_antifurthest_pt(bv, [1.0, -1.0]) # [0.0, 3.0]
 
 # See also
 
-[`get_furthest_pt`](@ref), [`intersects`](@ref), [`Hyperplane`](@ref)
+[`get_furthest_pt`](@ref)
 """
 function get_antifurthest_pt(bv::BoundingVolume, n::Vector{<:Real})
     return get_furthest_pt(bv, -n)
@@ -1516,7 +1516,7 @@ intersects(bv, plane) # true
 
 # See also
 
-[`get_intersection`](@ref), [`get_furthest_pt`](@ref), [`get_antifurthest_pt`](@ref)
+[`get_intersection(::BoundingVolume, ::Hyperplane)`](@ref)
 """
 function intersects(bv::BoundingVolume, query_plane::Hyperplane; include_boundary::Bool=true, tol::Real=DEFAULT_BV_POINT_TOL)
     # If the bounding volume is empty, it cannot intersect with anything
@@ -1549,10 +1549,10 @@ function intersects(bv::BoundingVolume, query_plane::Hyperplane; include_boundar
     end
 end
 
-"""
+@doc raw"""
     tighten_bv_bounds(bv::BoundingVolume, query_plane::Hyperplane; tol=DEFAULT_BV_POINT_TOL)
 
-Return a new bounding volume tightened around `bv ∩ query_plane`.
+Return a new bounding volume tightened around ``bv \cap query_plane``.
 
 This is a non-mutating operation. The returned bounding volume is the smallest
 axis-aligned box obtained by tightening each coordinate interval using the plane
@@ -1571,7 +1571,7 @@ Use [`get_intersection`](@ref) when you want a non-throwing method that returns
 
 # Returns
 
-A new [`BoundingVolume`](@ref) enclosing `bv ∩ query_plane`.
+A new [`BoundingVolume`](@ref) enclosing `bv` intersecting with `query_plane`.
 
 # Throws
 
@@ -1590,7 +1590,7 @@ tight = tighten_bv_bounds(bv, plane)
 
 # See also
 
-[`get_intersection`](@ref), [`intersects`](@ref), [`Hyperplane`](@ref)
+[`get_intersection(::BoundingVolume, ::Hyperplane)`](@ref)
 """
 function tighten_bv_bounds(bv::BoundingVolume, query_plane::Hyperplane; tol=DEFAULT_BV_POINT_TOL::Real)
     # Empty BV: return an empty/tightened copy
@@ -1655,10 +1655,10 @@ function tighten_bv_bounds(bv::BoundingVolume, query_plane::Hyperplane; tol=DEFA
     return BoundingVolume(new_lb, new_ub; tol=tol)
 end
 
-"""
+@doc raw"""
     get_intersection(bv::BoundingVolume, query_plane::Hyperplane; tol=DEFAULT_BV_POINT_TOL)
 
-Return a bounding volume enclosing `bv ∩ query_plane`.
+Return a bounding volume enclosing ``bv \cap query_plane``.
 
 If the bounding volume does not intersect the hyperplane, this method returns
 `BoundingVolume()`. Otherwise, it returns the result of
@@ -1687,7 +1687,7 @@ intersection_bv = get_intersection(bv, plane)
 
 # See also
 
-[`intersects`](@ref), [`tighten_bv_bounds`](@ref)
+[`intersects(::BoundingVolume, ::Hyperplane)`](@ref), [`tighten_bv_bounds`](@ref)
 """
 function get_intersection(bv::BoundingVolume, query_plane::Hyperplane; tol::Real=DEFAULT_BV_POINT_TOL)
     # No intersection at all
@@ -1700,13 +1700,13 @@ function get_intersection(bv::BoundingVolume, query_plane::Hyperplane; tol::Real
     return tighten_bv_bounds(bv, query_plane; tol=tol)
 end
 
-"""
+@doc raw"""
     get_closest_point(bv::BoundingVolume, query_plane::Hyperplane; tol=DEFAULT_BV_POINT_TOL)
 
 Return a point in `bv` closest to `query_plane`.
 
 If `bv` intersects the hyperplane, the closest distance is zero, and this method
-returns a deterministic feasible point in `bv ∩ query_plane`. If the bounding
+returns a deterministic feasible point in ``bv \cap query_plane``. If the bounding
 volume lies entirely on one side of the hyperplane, the method returns the
 corner of `bv` closest to the hyperplane.
 
@@ -1739,7 +1739,7 @@ get_closest_point(bv, plane) # [2.0, -1.0] with lexicographic tie-breaking
 
 # See also
 
-[`get_furthest_point`](@ref), [`intersects`](@ref), [`Hyperplane`](@ref)
+[`get_furthest_point(::BoundingVolume, ::Hyperplane)`](@ref)
 """
 function get_closest_point(bv::BoundingVolume, query_plane::Hyperplane; tol=DEFAULT_BV_POINT_TOL::Real)
     # If the bounding volume is empty, you cannot find a closest point
@@ -1914,7 +1914,7 @@ get_furthest_point(bv, plane) # [2.0, 0.0] with lexicographic tie-breaking
 
 # See also
 
-[`get_closest_point`](@ref), [`get_furthest_pt`](@ref), [`get_antifurthest_pt`](@ref)
+[`get_closest_point(::BoundingVolume, ::Hyperplane)`](@ref)
 """
 function get_furthest_point(bv::BoundingVolume, query_plane::Hyperplane; tol=DEFAULT_BV_POINT_TOL::Real)
     # If the bounding volume is empty, you cannot find a furthest point
