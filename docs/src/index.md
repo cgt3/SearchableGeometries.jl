@@ -6,7 +6,7 @@ CurrentModule = SearchableGeometries
 
 SearchableGeometries.jl provides geometric tools for building searchable geometric structures.
 
-The long-term goal is to support spatial and graph-based search structures such as kd-trees, ball trees, bounding-volume hierarchies, and neighborhood graphs. The current package focuses on the geometric primitives needed to make those search routines possible.
+The long-term goal is to support spatial and graph-based search structures such as kd-trees, and bounding-volume hierarchies. The current package focuses on the geometric primitives needed to make those search routines possible.
 
 ## Introduction
 
@@ -18,7 +18,7 @@ Search algorithms often need to answer geometric questions quickly:
 - What is the furthest point in a region from a query object?
 - Can a bounding volume be tightened around an intersection?
 
-SearchableGeometries.jl provides types and functions for answering these questions.
+SearchableGeometries.jl provides types and methods for answering these questions.
 
 ## Example
 
@@ -28,7 +28,7 @@ using SearchableGeometries
 bv = BoundingVolume([0.0, 0.0], [2.0, 1.0])
 pt = [3.0, 0.5]
 
-closest_pt = get_closest_point(bv, pt)
+closest_pt = get_closest_point(bv, pt) # returns [2.0, 0.5]
 ```
 
 ## Features
