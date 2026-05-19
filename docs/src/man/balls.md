@@ -28,7 +28,7 @@ For example:
 
 Balls are useful when search is based on distance.
 
-For example, an epsilon-ball query asks for all points within distance ``\epsilon`` of a query point. A ball gives a natural geometric representation of that search region.
+For example, an epsilon-ball query asks for all points within distance ``\varepsilon`` of a query point. A ball gives a natural geometric representation of that search region.
 
 Balls can also be compared with bounding volumes. This allows search algorithms to quickly decide whether a region is too far away, fully contained, or possibly intersecting the query region.
 
@@ -39,10 +39,10 @@ using SearchableGeometries
 
 ball = Ball([0.0, 0.0], 1.0; p=2)
 
-is_contained(ball, [0.5, 0.5])
-is_contained(ball, [2.0, 0.0])
+is_contained(ball, [0.5, 0.5]) # returns true
+is_contained(ball, [2.0, 0.0]) # returns false
 
-bv = BoundingVolume(ball)
+bv = BoundingVolume(ball) # returns a bounding volume that encloses the ball
 ```
 
 A ball can also be intersected with a bounding volume:
@@ -53,7 +53,7 @@ using SearchableGeometries
 ball = Ball([0.0, 0.0], 1.0; p=2)
 bv = BoundingVolume([0.5, -0.5], [2.0, 0.5])
 
-intersects(bv, ball)
+intersects(bv, ball) # returns true
 get_intersection(bv, ball)
 ```
 
