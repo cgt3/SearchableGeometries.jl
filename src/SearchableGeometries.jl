@@ -228,7 +228,7 @@ segment.inactive_dim # [1]
 
 # See also
 
-[`Ball`](@ref), [`Hyperplane`](@ref), [`get_intersection`](@ref), [`get_face_bounding_volume`](@ref)
+[`Ball`](@ref), [`Hyperplane`](@ref)
 """
 struct BoundingVolume <: SearchableGeometry
     lb::Vector                  # lower bounds
@@ -304,13 +304,13 @@ A vector representing the closest point in `bv`.
 using SearchableGeometries
 
 bv = BoundingVolume([0.0, 0.0], [1.0, 2.0])
-get_closest_point(bv, [3.0, 0.5]) # [1.0, 0.5]
-get_closest_point(bv, [0.25, 1.0]) # [0.25, 1.0]
+get_closest_point(bv, [3.0, 0.5]) # returns [1.0, 0.5]
+get_closest_point(bv, [0.25, 1.0]) # returns [0.25, 1.0]
 ```
 
-# See also
+# See also 
 
-[`get_furthest_point`](@ref), [`is_contained`](@ref)
+[`get_furthest_point`](@ref)
 """
 function get_closest_point(bv::BoundingVolume, query_pt::Vector{<:Real})
     closest_pt = copy(query_pt)
@@ -354,7 +354,7 @@ get_furthest_point(bv, [0.25, 2.8]) # approximately [2.0, 0.0]
 
 # See also
 
-[`get_closest_point`](@ref), [`get_furthest_pt`](@ref), [`get_antifurthest_pt`](@ref)
+[`get_closest_point`](@ref)
 """
 function get_furthest_point(bv::BoundingVolume, query_pt::Vector{<:Real})
     furthest_pt = similar(query_pt)
