@@ -58,6 +58,7 @@ The current package provides:
 - [BoundingVolume](@ref def_BoundingVolume)
 - [Ball](@ref def_Ball)
 - [Hyperplane](@ref def_Hyperplane)
-
-
+- [Containment](@ref containment)
+- [Intersection](@ref intersection)
+- [Closest and Furthest Points](@ref closest_furthest_points)
 

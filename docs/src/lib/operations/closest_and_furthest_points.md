@@ -1,4 +1,4 @@
-# Closest and Furthest Points
+# [Closest and Furthest Points](@id closest_furthest_points)
 
 ```@meta
 CurrentModule = SearchableGeometries

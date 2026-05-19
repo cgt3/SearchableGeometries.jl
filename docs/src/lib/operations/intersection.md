@@ -1,4 +1,4 @@
-# Intersection
+# [Intersection](@id intersection)
 
 ```@meta
 CurrentModule = SearchableGeometries

@@ -1,4 +1,4 @@
-# Containment
+# [Containment](@id containment)
 
 ```@meta
 CurrentModule = SearchableGeometries
