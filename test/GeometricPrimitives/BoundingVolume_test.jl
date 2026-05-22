@@ -1,4 +1,4 @@
-using SearchableGeometries
+using SearchableGeometries.GeometricPrimitives
 
 # Constructing BVs: ------------------------------------------------------
 @testset "Constructing BVs: Invalid bounds" begin

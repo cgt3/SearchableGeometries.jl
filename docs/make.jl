@@ -1,4 +1,5 @@
 using SearchableGeometries
+using SearchableGeometries.GeometricPrimitives
 using Documenter
 
 DocMeta.setdocmeta!(
@@ -8,8 +9,14 @@ DocMeta.setdocmeta!(
     recursive=true
 )
 
+DocMeta.setdocmeta!(
+    GeometricPrimitives,
+    :DocTestSetup,
+    :(using SearchableGeometries.GeometricPrimitives);
+    recursive=true
+)
 makedocs(
-    modules=[SearchableGeometries],
+    modules=[SearchableGeometries, GeometricPrimitives],
     authors="Christina Taylor <cgtaylor@boisestate.edu>, Emmanuel Kwame Ayanful <emmanuelayanful@u.boisestate.edu>",
     sitename="SearchableGeometries.jl",
     pagesonly=true,

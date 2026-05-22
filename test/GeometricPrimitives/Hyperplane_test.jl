@@ -1,4 +1,4 @@
-using SearchableGeometries
+using SearchableGeometries.GeometricPrimitives
 using LinearAlgebra: norm, dot
 
 # Hyperplane constructors --------------------------------------------------------

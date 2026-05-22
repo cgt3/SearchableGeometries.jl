@@ -1,4 +1,4 @@
-using SearchableGeometries
+using SearchableGeometries.GeometricPrimitives
 
 # Ball Constructors --------------------------------------------------------
 @testset "Constructing Balls: Invalid radius" begin
