@@ -130,7 +130,7 @@ export BoundingVolume
 
 # BV-only functions
 export get_closest_point, get_furthest_point, face_index_to_spatial_index, get_face_bounding_volume
-include("BoundingVolumes.jl")
+include("boundingvolumes.jl")
 
 # ----------------------------------------------------------
 # Balls
@@ -141,7 +141,7 @@ export Ball
 
 # Ball-only functions
 export tighten_bv_bounds!, get_reduced_dim_ball
-include("Balls.jl")
+include("balls.jl")
 
 # ----------------------------------------------------------
 # Hyperplanes
@@ -152,6 +152,6 @@ export Hyperplane
 
 # Hyperplane-only functions
 export tighten_bv_bounds, get_furthest_point, get_antifurthest_point
-include("Hyperplanes.jl")
+include("hyperplanes.jl")
 
 end # module GeometricPrimitives
