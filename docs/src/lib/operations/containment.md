@@ -1,7 +1,7 @@
 # [Containment](@id containment)
 
 ```@meta
-CurrentModule = SearchableGeometries
+CurrentModule = SearchableGeometries.GeometricPrimitives
 ```
 
 Containment asks whether one object lies inside another object.

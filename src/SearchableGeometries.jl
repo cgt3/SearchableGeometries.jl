@@ -37,8 +37,6 @@ module SearchableGeometries
 
 using LinearAlgebra
 
-export SearchableGeometry
-
 # Submodels
 export GeometricPrimitives
 include("GeometricPrimitives.jl")

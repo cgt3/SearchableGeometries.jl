@@ -1,7 +1,7 @@
 # [Balls](@id balls_manual)
 
 ```@meta
-CurrentModule = SearchableGeometries
+CurrentModule = SearchableGeometries.GeometricPrimitives
 ```
 
 A ball is a distance-based region used to describe all points within a fixed radius of a center point.

@@ -1,7 +1,7 @@
 # [Getting Started](@id getting_started)
 
 ```@meta
-CurrentModule = SearchableGeometries
+CurrentModule = SearchableGeometries.GeometricPrimitives
 ```
 
 This page gives a quick introduction to using `SearchableGeometries.jl`.

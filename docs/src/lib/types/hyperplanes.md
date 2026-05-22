@@ -1,7 +1,7 @@
 # [Hyperplane](@id def_Hyperplane)
 
 ```@meta
-CurrentModule = SearchableGeometries
+CurrentModule = SearchableGeometries.GeometricPrimitives
 ```
 
 ```@docs

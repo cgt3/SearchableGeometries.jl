@@ -1,7 +1,7 @@
 # API Reference
 
 ```@meta
-CurrentModule = SearchableGeometries
+CurrentModule = SearchableGeometries.GeometricPrimitives
 ```
 
 This page lists the public API documented throughout the manual.

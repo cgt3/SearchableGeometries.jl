@@ -1,7 +1,7 @@
 # [Ball](@id def_Ball)
 
 ```@meta
-CurrentModule = SearchableGeometries
+CurrentModule = SearchableGeometries.GeometricPrimitives
 ```
 
 ```@docs

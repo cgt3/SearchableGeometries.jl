@@ -1,7 +1,7 @@
 # SearchableGeometries.jl
 
 ```@meta
-CurrentModule = SearchableGeometries
+CurrentModule = SearchableGeometries.GeometricPrimitives
 ```
 
 SearchableGeometries.jl provides geometric tools for building searchable geometric structures.

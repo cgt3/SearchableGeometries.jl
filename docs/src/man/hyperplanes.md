@@ -1,7 +1,7 @@
 # [Hyperplanes](@id hyperplanes_manual)
 
 ```@meta
-CurrentModule = SearchableGeometries
+CurrentModule = SearchableGeometries.GeometricPrimitives
 ```
 
 A hyperplane is a flat affine surface used to split or query space.

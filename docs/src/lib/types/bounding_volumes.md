@@ -1,7 +1,7 @@
 # [BoundingVolume](@id def_BoundingVolume)
 
 ```@meta
-CurrentModule = SearchableGeometries
+CurrentModule = SearchableGeometries.GeometricPrimitives
 ```
 
 ```@docs

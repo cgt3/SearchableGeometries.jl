@@ -1,7 +1,7 @@
 # [Closest and Furthest Points](@id closest_furthest_points)
 
 ```@meta
-CurrentModule = SearchableGeometries
+CurrentModule = SearchableGeometries.GeometricPrimitives
 ```
 
 Closest-point and furthest-point queries identify representative points in a geometric object relative to a query point or query geometry.

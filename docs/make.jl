@@ -6,17 +6,20 @@ DocMeta.setdocmeta!(
     SearchableGeometries,
     :DocTestSetup,
     :(using SearchableGeometries);
-    recursive=true
+    recursive=false
 )
 
 DocMeta.setdocmeta!(
-    GeometricPrimitives,
+    SearchableGeometries.GeometricPrimitives,
     :DocTestSetup,
-    :(using SearchableGeometries.GeometricPrimitives);
-    recursive=true
+    :(using SearchableGeometries);
+    recursive=false
 )
 makedocs(
-    modules=[SearchableGeometries, GeometricPrimitives],
+    modules=[
+        SearchableGeometries,
+        SearchableGeometries.GeometricPrimitives,
+    ],
     authors="Christina Taylor <cgtaylor@boisestate.edu>, Emmanuel Kwame Ayanful <emmanuelayanful@u.boisestate.edu>",
     sitename="SearchableGeometries.jl",
     pagesonly=true,

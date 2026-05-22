@@ -1,7 +1,7 @@
 # [Bounding Volumes](@id bounding_volumes_manual)
 
 ```@meta
-CurrentModule = SearchableGeometries
+CurrentModule = SearchableGeometries.GeometricPrimitives
 ```
 
 A bounding volume is an axis-aligned region used to enclose a set of points or another geometric object.

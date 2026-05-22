@@ -151,7 +151,7 @@ include("balls.jl")
 export Hyperplane
 
 # Hyperplane-only functions
-export tighten_bv_bounds, get_furthest_point, get_antifurthest_point
+export tighten_bv_bounds, get_furthest_pt, get_antifurthest_pt
 include("hyperplanes.jl")
 
 end # module GeometricPrimitives
