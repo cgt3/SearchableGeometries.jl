@@ -33,6 +33,6 @@ SearchableGeometry
 - [`get_face_bounding_volume`](@ref)
 - [`get_reduced_dim_ball`](@ref)
 - [`tighten_bv_bounds!`](@ref)
-- [`get_furthest_pt`](@ref)
-- [`get_antifurthest_pt`](@ref)
+- [`get_extreme_point`](@ref)
+- [`get_antiextreme_point`](@ref)
 - [`tighten_bv_bounds`](@ref)

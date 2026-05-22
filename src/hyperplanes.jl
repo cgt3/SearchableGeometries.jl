@@ -173,7 +173,7 @@ get_closest_point([2.0, 0.0], plane) # approximately [1.0, 1.0]
 
 # See also
 
-[`get_furthest_pt`](@ref), [`get_antifurthest_pt`](@ref)
+[`get_extreme_point`](@ref), [`get_antiextreme_point`](@ref)
 """
 function get_closest_point(pt::Vector{<:Real}, query_plane::Hyperplane)
     if length(pt) != query_plane.embedding_dim
@@ -184,7 +184,7 @@ function get_closest_point(pt::Vector{<:Real}, query_plane::Hyperplane)
 end
 
 """
-    get_furthest_pt(bv::BoundingVolume, n; tol=DEFAULT_BV_POINT_TOL)
+    get_extreme_point(bv::BoundingVolume, n; tol=DEFAULT_BV_POINT_TOL)
 
 Return a point in `bv` maximizing `dot(n, x)`.
 
@@ -216,16 +216,16 @@ Throws an error if the dimension of `n` does not match `bv`, or if `n` is zero.
 using SearchableGeometries
 
 bv = BoundingVolume([0.0, 0.0], [2.0, 3.0])
-get_furthest_pt(bv, [1.0, -1.0]) # [2.0, 0.0]
+get_extreme_point(bv, [1.0, -1.0]) # [2.0, 0.0]
 ```
 
 # See also
 
-[`get_antifurthest_pt`](@ref)
+[`get_antiextreme_point`](@ref)
 """
-function get_furthest_pt(bv::BoundingVolume, n::Vector{<:Real})
+function get_extreme_point(bv::BoundingVolume, n::Vector{<:Real})
     if length(n) != length(bv.lb)
-        throw("SearchableGeometries.get_furthest_pt: normal vector dimension($(length(n))) does not match bounding volume dimension($(length(bv.lb)))")
+        throw("SearchableGeometries.get_extreme_point: normal vector dimension($(length(n))) does not match bounding volume dimension($(length(bv.lb)))")
     end
 
     T = promote_type(eltype(bv.lb), eltype(bv.ub), eltype(n))
@@ -239,11 +239,11 @@ function get_furthest_pt(bv::BoundingVolume, n::Vector{<:Real})
 end
 
 """
-    get_antifurthest_pt(bv::BoundingVolume, n; tol=DEFAULT_BV_POINT_TOL)
+    get_antiextreme_point(bv::BoundingVolume, n; tol=DEFAULT_BV_POINT_TOL)
 
 Return a point in `bv` minimizing `dot(n, x)`.
 
-This is the opposite linear extreme from [`get_furthest_pt`](@ref). For each
+This is the opposite linear extreme from [`get_extreme_point`](@ref). For each
 coordinate, it chooses the lower bound when `n[i]` is positive and the upper
 bound when `n[i]` is negative.
 
@@ -263,15 +263,15 @@ A point in `bv` minimizing `dot(n, x)`.
 using SearchableGeometries
 
 bv = BoundingVolume([0.0, 0.0], [2.0, 3.0])
-get_antifurthest_pt(bv, [1.0, -1.0]) # [0.0, 3.0]
+get_antiextreme_point(bv, [1.0, -1.0]) # [0.0, 3.0]
 ```
 
 # See also
 
-[`get_furthest_pt`](@ref)
+[`get_extreme_point`](@ref)
 """
-function get_antifurthest_pt(bv::BoundingVolume, n::Vector{<:Real})
-    return get_furthest_pt(bv, -n)
+function get_antiextreme_point(bv::BoundingVolume, n::Vector{<:Real})
+    return get_extreme_point(bv, -n)
 end
 
 """
@@ -332,8 +332,8 @@ function intersects(bv::BoundingVolume, query_plane::Hyperplane; include_boundar
     n = query_plane.n
 
     # Compute the furthest and antifurthest points
-    furthest_pt = get_furthest_pt(bv, n)
-    antifurthest_pt = get_antifurthest_pt(bv, n)
+    furthest_pt = get_extreme_point(bv, n)
+    antifurthest_pt = get_antiextreme_point(bv, n)
 
     # Compute the minimum and maximum signed offsets over the BV
     smin = dot(n, antifurthest_pt - pt)
@@ -419,8 +419,8 @@ function tighten_bv_bounds(bv::BoundingVolume, query_plane::Hyperplane; tol=DEFA
     new_ub = T.(copy(bv.ub))
 
     # Compute the furthest and antifurthest points
-    f_pt = get_furthest_pt(bv, n)
-    af_pt = get_antifurthest_pt(bv, n)
+    f_pt = get_extreme_point(bv, n)
+    af_pt = get_antiextreme_point(bv, n)
 
     # Compute the minimum and maximum signed offsets over the BV
     total_min = dot(n, af_pt)
@@ -557,8 +557,8 @@ function get_closest_point(bv::BoundingVolume, query_plane::Hyperplane; tol=DEFA
     c = dot(n, pt)
 
     # Compute the furthest and antifurthest points
-    f_pt = get_furthest_pt(bv, n)
-    af_pt = get_antifurthest_pt(bv, n)
+    f_pt = get_extreme_point(bv, n)
+    af_pt = get_antiextreme_point(bv, n)
 
     # Compute the minimum and maximum signed offsets over the BV
     smin = dot(n, af_pt - pt)
@@ -731,8 +731,8 @@ function get_furthest_point(bv::BoundingVolume, query_plane::Hyperplane; tol=DEF
     is_active = query_plane.is_active
 
     # Compute the furthest and antifurthest points
-    f_pt = get_furthest_pt(bv, n)
-    af_pt = get_antifurthest_pt(bv, n)
+    f_pt = get_extreme_point(bv, n)
+    af_pt = get_antiextreme_point(bv, n)
 
     # Compute the minimum and maximum signed offsets over the BV
     smin = dot(n, af_pt - pt)

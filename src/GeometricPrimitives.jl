@@ -117,7 +117,7 @@ The meaning of `query` depends on the method. For example:
 
 # See also
 
-[`get_closest_point`](@ref), [`get_furthest_pt`](@ref), [`get_antifurthest_pt`](@ref)
+[`get_closest_point`](@ref), [`get_extreme_point`](@ref), [`get_antiextreme_point`](@ref)
 """
 function get_furthest_point end
 
@@ -151,7 +151,7 @@ include("balls.jl")
 export Hyperplane
 
 # Hyperplane-only functions
-export tighten_bv_bounds, get_furthest_pt, get_antifurthest_pt
+export tighten_bv_bounds, get_extreme_point, get_antiextreme_point
 include("hyperplanes.jl")
 
 end # module GeometricPrimitives

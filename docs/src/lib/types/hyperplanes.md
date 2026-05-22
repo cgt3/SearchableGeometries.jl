@@ -34,8 +34,8 @@ tighten_bv_bounds
 ## Linear extrema
 
 ```@docs
-get_furthest_pt
-get_antifurthest_pt
+get_extreme_point
+get_antiextreme_point
 ```
 
 

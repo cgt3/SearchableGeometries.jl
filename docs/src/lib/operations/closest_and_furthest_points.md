@@ -36,6 +36,6 @@ get_furthest_point(::BoundingVolume, ::Hyperplane)
 ## Linear extrema helpers
 
 ```@docs; canonical=false
-get_furthest_pt
-get_antifurthest_pt
+get_extreme_point
+get_antiextreme_point
 ```
