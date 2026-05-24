@@ -74,7 +74,7 @@ struct Ball <: SearchableGeometry
         active_indices::Bool=true::Bool, indices=(active_indices ? [eachindex(center)...] : Vector{Int}[])::Vector{Int}
     )
         if radius < 0
-            throw("SearchableGeometries.Ball: Cannot construct ball with negative radius.")
+            throw("SearchableGeometries.GeometricPrimitives.Ball: Cannot construct ball with negative radius.")
         elseif radius == 0
             return new(center, radius, p, 0, [], [eachindex(center)...], zeros(Bool, length(center)), length(center))
         end
@@ -101,7 +101,6 @@ struct Ball <: SearchableGeometry
     end
 end
 
-import Base.==
 function Base.:(==)(ball1::Ball, ball2::Ball)
     return all(ball1.center .== ball2.center) &&
            ball1.radius == ball2.radius &&
@@ -365,7 +364,7 @@ slice.inactive_dim # [2]
 """
 function get_reduced_dim_ball(removal_dim::Integer, x_d::Real, ball::Ball)
     if x_d < ball.center[removal_dim] - ball.radius || ball.center[removal_dim] + ball.radius < x_d
-        throw("SearchableGeometries.Ball: coordinate plane defined by x_$removal_dim = $x_d does not intersect the ball (center=$(ball.center), radius=$(ball.radius))")
+        throw("SearchableGeometries.GeometricPrimitives.Ball: coordinate plane defined by x_$removal_dim = $x_d does not intersect the ball (center=$(ball.center), radius=$(ball.radius))")
     end
 
     new_center = copy(ball.center)

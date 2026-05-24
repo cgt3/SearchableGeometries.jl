@@ -60,11 +60,11 @@ struct Hyperplane <: SearchableGeometry
 
     function Hyperplane(point::Vector, n::Vector)
         if length(point) != length(n)
-            throw("SearchableGeometries.Hyperplane: point and normal vector must have the same dimension")
+            throw("SearchableGeometries.GeometricPrimitives.Hyperplane: point and normal vector must have the same dimension")
         end
 
         if iszero(norm(n))
-            throw("SearchableGeometries.Hyperplane: normal vector must be nonzero")
+            throw("SearchableGeometries.GeometricPrimitives.Hyperplane: normal vector must be nonzero")
         end
 
         all_indices = [eachindex(point)...]
@@ -73,7 +73,6 @@ struct Hyperplane <: SearchableGeometry
     end
 end
 
-import Base.==
 function Base.:(==)(plane1::Hyperplane, plane2::Hyperplane; tol::Real=DEFAULT_BV_POINT_TOL)
     return isapprox(plane1.n' * plane1.point, plane2.n' * plane2.point, atol=tol) &&
            all(plane1.n .== plane2.n) &&
@@ -129,7 +128,7 @@ is_contained(plane, [2.0, 0.0]) # false
 """
 function is_contained(plane::Hyperplane, query_pt::Vector{<:Real}; tol::Real=DEFAULT_BV_POINT_TOL)
     if length(query_pt) != plane.embedding_dim
-        throw("SearchableGeometries.Hyperplane: point dimension($(length(query_pt))) does not match hyperplane embedding dimension($(plane.embedding_dim))")
+        throw("SearchableGeometries.GeometricPrimitives.Hyperplane: point dimension($(length(query_pt))) does not match hyperplane embedding dimension($(plane.embedding_dim))")
     end
 
     return abs(dot(plane.n, query_pt - plane.point)) <= tol
@@ -177,7 +176,7 @@ get_closest_point([2.0, 0.0], plane) # approximately [1.0, 1.0]
 """
 function get_closest_point(pt::Vector{<:Real}, query_plane::Hyperplane)
     if length(pt) != query_plane.embedding_dim
-        throw("SearchableGeometries.Hyperplane: point dimension($(length(pt))) does not match hyperplane embedding dimension($(query_plane.embedding_dim))")
+        throw("SearchableGeometries.GeometricPrimitives.Hyperplane: point dimension($(length(pt))) does not match hyperplane embedding dimension($(query_plane.embedding_dim))")
     end
 
     return pt - dot(query_plane.n, pt - query_plane.point) * query_plane.n
@@ -225,7 +224,7 @@ get_extreme_point(bv, [1.0, -1.0]) # [2.0, 0.0]
 """
 function get_extreme_point(bv::BoundingVolume, n::Vector{<:Real})
     if length(n) != length(bv.lb)
-        throw("SearchableGeometries.get_extreme_point: normal vector dimension($(length(n))) does not match bounding volume dimension($(length(bv.lb)))")
+        throw("SearchableGeometries.GeometricPrimitives.get_extreme_point: normal vector dimension($(length(n))) does not match bounding volume dimension($(length(bv.lb)))")
     end
 
     T = promote_type(eltype(bv.lb), eltype(bv.ub), eltype(n))
@@ -325,7 +324,7 @@ function intersects(bv::BoundingVolume, query_plane::Hyperplane; include_boundar
 
     # The dimension of the bounding volume and the hyperplane must match
     if length(bv.lb) != query_plane.embedding_dim
-        throw("SearchableGeometries.Hyperplane: bounding volume dimension($(length(bv.lb))) does not match hyperplane embedding dimension($(query_plane.embedding_dim))")
+        throw("SearchableGeometries.GeometricPrimitives.Hyperplane: bounding volume dimension($(length(bv.lb))) does not match hyperplane embedding dimension($(query_plane.embedding_dim))")
     end
 
     pt = query_plane.point
@@ -399,13 +398,13 @@ function tighten_bv_bounds(bv::BoundingVolume, query_plane::Hyperplane; tol=DEFA
 
     # The BV and hyperplane must live in the same embedding space
     if length(bv.lb) != query_plane.embedding_dim
-        throw("SearchableGeometries.Hyperplane: bounding volume dimension($(length(bv.lb))) does not match hyperplane embedding dimension($(query_plane.embedding_dim))")
+        throw("SearchableGeometries.GeometricPrimitives.Hyperplane: bounding volume dimension($(length(bv.lb))) does not match hyperplane embedding dimension($(query_plane.embedding_dim))")
     end
 
     # If the BV does not intersect the hyperplane, there is no tightened BV
     # representing BV ∩ Hyperplane.
     if !intersects(bv, query_plane; include_boundary=true, tol=tol)
-        throw("SearchableGeometries.Hyperplane: cannot tighten BoundingVolume because it does not intersect the hyperplane")
+        throw("SearchableGeometries.GeometricPrimitives.Hyperplane: cannot tighten BoundingVolume because it does not intersect the hyperplane")
     end
 
     # Plane equation: dot(n, x) = c0
@@ -543,12 +542,12 @@ get_closest_point(bv, plane) # [2.0, -1.0] with lexicographic tie-breaking
 function get_closest_point(bv::BoundingVolume, query_plane::Hyperplane; tol=DEFAULT_BV_POINT_TOL::Real)
     # If the bounding volume is empty, you cannot find a closest point
     if bv.is_empty
-        throw("SearchableGeometries.Hyperplane: cannot compute closest point of an empty BoundingVolume")
+        throw("SearchableGeometries.GeometricPrimitives.Hyperplane: cannot compute closest point of an empty BoundingVolume")
     end
 
     # The dimension of the bounding volume and the hyperplane must match
     if length(bv.lb) != query_plane.embedding_dim
-        throw("SearchableGeometries.Hyperplane: bounding volume dimension($(length(bv.lb))) does not match hyperplane embedding dimension($(query_plane.embedding_dim))")
+        throw("SearchableGeometries.GeometricPrimitives.Hyperplane: bounding volume dimension($(length(bv.lb))) does not match hyperplane embedding dimension($(query_plane.embedding_dim))")
     end
 
     n = query_plane.n
@@ -718,12 +717,12 @@ get_furthest_point(bv, plane) # [2.0, 0.0] with lexicographic tie-breaking
 function get_furthest_point(bv::BoundingVolume, query_plane::Hyperplane; tol=DEFAULT_BV_POINT_TOL::Real)
     # If the bounding volume is empty, you cannot find a furthest point
     if bv.is_empty
-        throw("SearchableGeometries.Hyperplane: cannot compute furthest point of an empty BoundingVolume")
+        throw("SearchableGeometries.GeometricPrimitives.Hyperplane: cannot compute furthest point of an empty BoundingVolume")
     end
 
     # The dimension of the bounding volume and the hyperplane must match
     if length(bv.lb) != query_plane.embedding_dim
-        throw("SearchableGeometries.Hyperplane: bounding volume dimension($(length(bv.lb))) does not match hyperplane embedding dimension($(query_plane.embedding_dim))")
+        throw("SearchableGeometries.GeometricPrimitives.Hyperplane: bounding volume dimension($(length(bv.lb))) does not match hyperplane embedding dimension($(query_plane.embedding_dim))")
     end
 
     n = query_plane.n

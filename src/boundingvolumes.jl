@@ -79,9 +79,9 @@ struct BoundingVolume <: SearchableGeometry
         lb::Vector{<:Real}, ub::Vector{<:Real}; tol::Real=DEFAULT_BV_POINT_TOL
     )
         if length(lb) != length(ub)
-            throw("SearchableGeometries: BoundingVolume: lb (length: $(length(lb))) and ub (length: $(length(ub))) have different dimensions.")
+            throw("SearchableGeometries.GeometricPrimitives.BoundingVolume: lb (length: $(length(lb))) and ub (length: $(length(ub))) have different dimensions.")
         elseif any(lb .> ub)
-            throw("SearchableGeometries: BoundingVolume: Cannot construct bounding volume with lb (=$lb) > ub (=$ub).")
+            throw("SearchableGeometries.GeometricPrimitives.BoundingVolume: Cannot construct bounding volume with lb (=$lb) > ub (=$ub).")
         end
 
         dim = length(lb)
@@ -100,7 +100,6 @@ struct BoundingVolume <: SearchableGeometry
     end
 end
 
-import Base.==
 function Base.:(==)(bv1::BoundingVolume, bv2::BoundingVolume)
     return all(bv1.lb .== bv2.lb) &&
            all(bv1.ub .== bv2.ub) &&

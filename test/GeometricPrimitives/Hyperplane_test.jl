@@ -8,8 +8,8 @@ using LinearAlgebra: norm, dot
 end
 
 @testset "Hyperplane(point, n): Normal vector must be nonzero" begin
-    @test_throws "SearchableGeometries.Hyperplane: normal vector must be nonzero" Hyperplane([0.0, 0.0], [0.0, 0.0])
-    @test_throws "SearchableGeometries.Hyperplane: normal vector must be nonzero" Hyperplane([1.0, 2.0, 3.0], [0.0, 0.0, 0.0])
+    @test_throws "SearchableGeometries.GeometricPrimitives.Hyperplane: normal vector must be nonzero" Hyperplane([0.0, 0.0], [0.0, 0.0])
+    @test_throws "SearchableGeometries.GeometricPrimitives.Hyperplane: normal vector must be nonzero" Hyperplane([1.0, 2.0, 3.0], [0.0, 0.0, 0.0])
 end
 
 @testset "Constructing Hyperplanes: Normal vector is normalized" begin
@@ -111,8 +111,8 @@ end
 @testset "get_closest_point(pt, plane): Point dimension must match hyperplane embedding dimension" begin
     plane = Hyperplane([0.0, 0.0, 0.0], [1.0, 0.0, 0.0])
 
-    @test_throws "SearchableGeometries.Hyperplane: point dimension(2) does not match hyperplane embedding dimension(3)" get_closest_point([0.0, 0.0], plane)
-    @test_throws "SearchableGeometries.Hyperplane: point dimension(4) does not match hyperplane embedding dimension(3)" get_closest_point([0.0, 0.0, 0.0, 0.0], plane)
+    @test_throws "SearchableGeometries.GeometricPrimitives.Hyperplane: point dimension(2) does not match hyperplane embedding dimension(3)" get_closest_point([0.0, 0.0], plane)
+    @test_throws "SearchableGeometries.GeometricPrimitives.Hyperplane: point dimension(4) does not match hyperplane embedding dimension(3)" get_closest_point([0.0, 0.0, 0.0, 0.0], plane)
 end
 
 @testset "get_closest_point(pt, plane): point already on the hyperplane" begin
@@ -170,7 +170,7 @@ end
     bv = BoundingVolume([0.0, 0.0], [1.0, 1.0])
     plane = Hyperplane([0.0, 0.0, 0.0], [1.0, 0.0, 0.0])
 
-    @test_throws "SearchableGeometries.Hyperplane: bounding volume dimension(2) does not match hyperplane embedding dimension(3)" intersects(bv, plane)
+    @test_throws "SearchableGeometries.GeometricPrimitives.Hyperplane: bounding volume dimension(2) does not match hyperplane embedding dimension(3)" intersects(bv, plane)
 end
 
 @testset "intersects(bv, plane): Plane crosses the interior of a full-dimensional BV" begin
@@ -299,7 +299,7 @@ end
     bv = BoundingVolume([0.0, 0.0], [1.0, 1.0])
     plane = Hyperplane([0.0, 0.0, 0.0], [1.0, 0.0, 0.0])
 
-    @test_throws "SearchableGeometries.Hyperplane: bounding volume dimension(2) does not match hyperplane embedding dimension(3)" get_closest_point(bv, plane)
+    @test_throws "SearchableGeometries.GeometricPrimitives.Hyperplane: bounding volume dimension(2) does not match hyperplane embedding dimension(3)" get_closest_point(bv, plane)
 end
 
 @testset "get_closest_point(bv, plane): BV completely on the positive side of the plane" begin
@@ -378,7 +378,7 @@ end
     bv = BoundingVolume([0.0, 0.0], [1.0, 1.0])
     plane = Hyperplane([0.0, 0.0, 0.0], [1.0, 0.0, 0.0])
 
-    @test_throws "SearchableGeometries.Hyperplane: bounding volume dimension(2) does not match hyperplane embedding dimension(3)" get_furthest_point(bv, plane)
+    @test_throws "SearchableGeometries.GeometricPrimitives.Hyperplane: bounding volume dimension(2) does not match hyperplane embedding dimension(3)" get_furthest_point(bv, plane)
 end
 
 @testset "get_furthest_point(bv, plane): BV completely on the positive side of the plane" begin

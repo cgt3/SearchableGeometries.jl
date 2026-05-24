@@ -122,6 +122,30 @@ The meaning of `query` depends on the method. For example:
 function get_furthest_point end
 
 # ----------------------------------------------------------
+# Lines
+# ----------------------------------------------------------
+
+# Data type
+export Line
+
+struct Line
+    dir::Vector
+    source::Vector
+
+    function Line(dir::Vector, source::Vector)
+        if length(dir) != length(source)
+            throw("SearchableGeometries.GeometricPrimitives.Line: direction vector and source point dimension must match")
+        end
+
+        return new(dir ./ norm(dir), source)
+    end
+end
+
+function (::Line)(s::Real)
+    return source + dir * s
+end
+
+# ----------------------------------------------------------
 # Bounding Volumes
 # ----------------------------------------------------------
 
@@ -154,4 +178,13 @@ export Hyperplane
 export tighten_bv_bounds, get_extreme_point, get_antiextreme_point
 include("hyperplanes.jl")
 
+# ----------------------------------------------------------
+# Cones
+# ----------------------------------------------------------
+
+# Data type
+export Cone
+
+# Cone-only functions
+include("cones.jl")
 end # module GeometricPrimitives
