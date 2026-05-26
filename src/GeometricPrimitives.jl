@@ -129,20 +129,20 @@ function get_furthest_point end
 export Line
 
 struct Line
-    dir::Vector
     source::Vector
+    dir::Vector
 
-    function Line(dir::Vector, source::Vector)
+    function Line(source::Vector, dir::Vector)
         if length(dir) != length(source)
             throw("SearchableGeometries.GeometricPrimitives.Line: direction vector and source point dimension must match")
         end
 
-        return new(dir ./ norm(dir), source)
+        return new(source, dir ./ norm(dir))
     end
 end
 
-function (::Line)(s::Real)
-    return source + dir * s
+function (line::Line)(s::Real)
+    return line.source + line.dir * s
 end
 
 # ----------------------------------------------------------
@@ -186,6 +186,6 @@ include("hyperplanes.jl")
 export Cone
 
 # Cone-only functions
-export get_R, get_radii
+export get_R, get_radii, get_bounding_radii
 include("cones.jl")
 end # module GeometricPrimitives
