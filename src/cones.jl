@@ -35,3 +35,12 @@ function get_radii(cone::Cone, p::Vector{<:Real})
     r = norm(dist2Vertex .- R * cone.axis)
     return R, r
 end
+
+function is_contained(cone::Cone, query_pt::Vector{<:Real}; include_boundary=true)
+    R, r = get_radii(cone, query_pt)
+    if include_boundary
+        return R >= 0 ? r <= R * cone.slope : false
+    else
+        return R > 0 ? r < R * cone.slope : false
+    end
+end

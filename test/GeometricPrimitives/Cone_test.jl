@@ -22,26 +22,26 @@ end
 end
 
 # `get_R` -----------------------------------------------------------
-@testset "get_R: Point along axis" begin
+@testset "get_R(cone, pt): Point along axis" begin
     cone = Cone([0.0, 0.0], [1.0, 0.0], 1.0)
     p = [2.0, 0.0]
     @test get_R(cone, p) == 2.0
 end
 
-@testset "get_R: Point opposite axis direction" begin
+@testset "get_R(cone, pt): Point opposite axis direction" begin
     cone = Cone([0.0, 0.0], [1.0, 0.0], 1.0)
     p = [-2.0, 0.0]
     @test get_R(cone, p) == -2.0
 end
 
-@testset "get_R: Point off axis" begin
+@testset "get_R(cone, pt): Point off axis" begin
     cone = Cone([0.0, 0.0], [1.0, 0.0], 1.0)
     p = [2.0, 1.0]
     @test get_R(cone, p) == 2.0
 end
 
 # `get_radii` ----------------------------------------------------------------
-@testset "get_radii: Point along axis" begin
+@testset "get_radii(cone, pt): Point along axis" begin
     cone = Cone([0.0, 0.0], [1.0, 0.0], 1.0)
     p = [3.0, 4.0]
     R, r = get_radii(cone, p)
@@ -49,7 +49,7 @@ end
     @test r == 4.0
 end
 
-@testset "get_radii: Point opposite axis direction" begin
+@testset "get_radii(cone, pt): Point opposite axis direction" begin
     cone = Cone([0.0, 0.0], [1.0, 0.0], 1.0)
     p = [-3.0, 4.0]
     R, r = get_radii(cone, p)
@@ -57,10 +57,65 @@ end
     @test r == 4.0
 end
 
-@testset "get_radii: Point off axis" begin
+@testset "get_radii(cone, pt): Point off axis" begin
     cone = Cone([0.0, 0.0], [1.0, 0.0], 1.0)
     p = [2.0, 1.0]
     R, r = get_radii(cone, p)
     @test R == 2.0
     @test r == 1.0
+end
+
+# `is_contained(cone, point)` ----------------------------------------------------------------
+@testset "is_contained(cone, pt): Point inside cone" begin
+    cone = Cone([0.0, 0.0], [1.0, 0.0], 1.0)
+    p = [2.0, 1.0]
+    @test is_contained(cone, p; include_boundary=true)
+    @test is_contained(cone, p; include_boundary=false)
+end
+
+@testset "is_contained(cone, pt): Point on boundary" begin
+    cone = Cone([0.0, 0.0], [1.0, 0.0], 1.0)
+    p = [2.0, 2.0]
+    @test is_contained(cone, p; include_boundary=true)
+    @test !is_contained(cone, p; include_boundary=false)
+end
+
+@testset "is_contained(cone, pt): Point outside cone" begin
+    cone = Cone([0.0, 0.0], [1.0, 0.0], 1.0)
+    p = [2.0, 3.0]
+    @test !is_contained(cone, p; include_boundary=true)
+    @test !is_contained(cone, p; include_boundary=false)
+end
+
+@testset "is_contained(cone, pt): Point behind vertex" begin
+    cone = Cone([0.0, 0.0], [1.0, 0.0], 1.0)
+    p = [-1.0, 0.5]
+    @test !is_contained(cone, p; include_boundary=true)
+    @test !is_contained(cone, p; include_boundary=false)
+end
+
+@testset "is_contained(cone, pt): Point at vertex" begin
+    cone = Cone([0.0, 0.0], [1.0, 0.0], 1.0)
+    p = [0.0, 0.0]
+    @test is_contained(cone, p; include_boundary=true)
+    @test !is_contained(cone, p; include_boundary=false)
+end
+
+@testset "is_contained(cone, pt): Point on axis" begin
+    cone = Cone([0.0, 0.0], [1.0, 0.0], 1.0)
+    p = [2.0, 0.0]
+    @test is_contained(cone, p; include_boundary=true)
+    @test is_contained(cone, p; include_boundary=false)
+end
+
+@testset "is_contained(cone, pt): Zero-slope cone only contains points on the axis" begin
+    cone = Cone([0.0, 0.0], [1.0, 0.0], 0.0)
+    p_on_axis = [3.0, 0.0]
+    p_off_axis = [3.0, 0.1]
+
+    @test is_contained(cone, p_on_axis; include_boundary=true)
+    @test !is_contained(cone, p_on_axis; include_boundary=false)
+
+    @test !is_contained(cone, p_off_axis; include_boundary=true)
+    @test !is_contained(cone, p_off_axis; include_boundary=false)
 end
