@@ -461,3 +461,211 @@ function get_face_bounding_volume(face_index::Integer, bv::BoundingVolume; tol::
 
     return BoundingVolume(face_lb, face_ub; tol=tol)
 end
+
+"""
+    get_closest_point(bv::BoundingVolume, query_line::Line; tol=DEFAULT_BV_POINT_TOL)
+
+Return a point in `bv` closest to `query_line`.
+
+If the line intersects the bounding volume, the closest distance is zero, and this
+method returns the lexicographically smallest point in the intersection. Otherwise,
+it minimizes the distance from the line to the bounding volume by minimizing the
+piecewise-quadratic distance from points on the line to `bv`.
+
+# Arguments
+
+- `bv::BoundingVolume`: bounding volume to search.
+- `query_line::Line`: query line.
+- `tol::Real`: tolerance used for intersection and tie-breaking.
+
+# Returns
+
+A point in `bv` closest to `query_line`.
+
+# Throws
+
+Throws an error if `bv` is empty or if dimensions do not match.
+
+# See also
+
+[`get_furthest_point(::BoundingVolume, ::Line)`](@ref)
+"""
+function get_closest_point(bv::BoundingVolume, query_line::Line; tol=DEFAULT_BV_POINT_TOL)
+    if bv.is_empty
+        throw("SearchableGeometries.GeometricPrimitives.Line: cannot compute closest point of an empty BoundingVolume")
+    end
+
+    if length(bv.lb) != length(query_line.source)
+        throw("SearchableGeometries.GeometricPrimitives.Line: bounding volume dimension($(length(bv.lb))) does not match line dimension($(length(query_line.source)))")
+    end
+
+    # Check whether the line intersects the bounding volume.
+    # The line is x(s) = query_line.source + s * query_line.dir.
+    s_min = -Inf
+    s_max = Inf
+
+    for i in eachindex(bv.lb)
+        if abs(query_line.dir[i]) <= tol
+            if query_line.source[i] < bv.lb[i] - tol || query_line.source[i] > bv.ub[i] + tol
+                s_min = Inf
+                s_max = -Inf
+                break
+            end
+        else
+            s1 = (bv.lb[i] - query_line.source[i]) / query_line.dir[i]
+            s2 = (bv.ub[i] - query_line.source[i]) / query_line.dir[i]
+
+            s_min = max(s_min, min(s1, s2))
+            s_max = min(s_max, max(s1, s2))
+        end
+    end
+
+    # If the line intersects the BV, the closest distance is zero.
+    # Return the lexicographically smallest point in the intersection.
+    if s_min <= s_max + tol
+        s = s_min
+
+        for i in eachindex(query_line.dir)
+            if query_line.dir[i] > tol
+                s = s_min
+                break
+            elseif query_line.dir[i] < -tol
+                s = s_max
+                break
+            end
+        end
+
+        return query_line(s)
+    end
+
+    # If the line does not intersect the BV, minimize the distance from
+    # the line to the BV. For fixed s, the closest BV point to line(s)
+    # is clamp.(line(s), bv.lb, bv.ub).
+    breakpoints = Float64[]
+
+    for i in eachindex(bv.lb)
+        if abs(query_line.dir[i]) > tol
+            push!(breakpoints, (bv.lb[i] - query_line.source[i]) / query_line.dir[i])
+            push!(breakpoints, (bv.ub[i] - query_line.source[i]) / query_line.dir[i])
+        end
+    end
+
+    sort!(breakpoints)
+
+    candidates = Float64[0.0]
+
+    for s in breakpoints
+        if isfinite(s)
+            push!(candidates, s)
+        end
+    end
+
+    interval_bounds = vcat([-Inf], breakpoints, [Inf])
+
+    for k in 1:(length(interval_bounds) - 1)
+        lo = interval_bounds[k]
+        hi = interval_bounds[k + 1]
+
+        if isinf(lo)
+            s_mid = hi - 1.0
+        elseif isinf(hi)
+            s_mid = lo + 1.0
+        else
+            s_mid = (lo + hi) / 2
+        end
+
+        line_mid = query_line(s_mid)
+
+        numerator = 0.0
+        denominator = 0.0
+
+        for i in eachindex(bv.lb)
+            if line_mid[i] < bv.lb[i]
+                numerator += query_line.dir[i] * (query_line.source[i] - bv.lb[i])
+                denominator += query_line.dir[i]^2
+            elseif line_mid[i] > bv.ub[i]
+                numerator += query_line.dir[i] * (query_line.source[i] - bv.ub[i])
+                denominator += query_line.dir[i]^2
+            end
+        end
+
+        if denominator > tol
+            s_star = -numerator / denominator
+
+            if s_star >= lo - tol && s_star <= hi + tol
+                push!(candidates, s_star)
+            end
+        end
+    end
+
+    closest_pt = nothing
+    closest_dist2 = Inf
+
+    for s in candidates
+        line_pt = query_line(s)
+        candidate_pt = clamp.(line_pt, bv.lb, bv.ub)
+
+        axial_component = (candidate_pt - query_line.source)' * query_line.dir
+        radial_component = (candidate_pt - query_line.source) - axial_component * query_line.dir
+        candidate_dist2 = dot(radial_component, radial_component)
+
+        if closest_pt === nothing || candidate_dist2 < closest_dist2 - tol
+            closest_pt = candidate_pt
+            closest_dist2 = candidate_dist2
+        elseif isapprox(candidate_dist2, closest_dist2; atol=tol)
+            # Lexicographic tie-breaking
+            for i in eachindex(candidate_pt)
+                if candidate_pt[i] < closest_pt[i] - tol
+                    closest_pt = candidate_pt
+                    break
+                elseif candidate_pt[i] > closest_pt[i] + tol
+                    break
+                end
+            end
+        end
+    end
+
+    return closest_pt
+end
+
+function get_furthest_point(bv::BoundingVolume, query_line::Line; tol=DEFAULT_BV_POINT_TOL)
+    if bv.is_empty
+        throw("SearchableGeometries.GeometricPrimitives.Line: cannot compute furthest point of an empty BoundingVolume")
+    end
+
+    if length(bv.lb) != length(query_line.source)
+        throw("SearchableGeometries.GeometricPrimitives.Line: bounding volume dimension($(length(bv.lb))) does not match line dimension($(length(query_line.source)))")
+    end
+
+    # The squared distance to a line is convex, so the furthest point
+    # from the line over an axis-aligned BV occurs at a vertex.
+    coord_choices = Tuple((bv.lb[i], bv.ub[i]) for i in eachindex(bv.lb))
+
+    furthest_pt = nothing
+    furthest_dist2 = -Inf
+
+    for coords in Iterators.product(coord_choices...)
+        candidate_pt = collect(coords)
+
+        axial_component = (candidate_pt - query_line.source)' * query_line.dir
+        radial_component = (candidate_pt - query_line.source) - axial_component * query_line.dir
+        candidate_dist2 = radial_component' * radial_component
+
+        if furthest_pt === nothing || candidate_dist2 > furthest_dist2 + tol
+            furthest_pt = candidate_pt
+            furthest_dist2 = candidate_dist2
+        elseif isapprox(candidate_dist2, furthest_dist2; atol=tol)
+            # Lexicographic tie-breaking
+            for i in eachindex(candidate_pt)
+                if candidate_pt[i] < furthest_pt[i] - tol
+                    furthest_pt = candidate_pt
+                    break
+                elseif candidate_pt[i] > furthest_pt[i] + tol
+                    break
+                end
+            end
+        end
+    end
+
+    return furthest_pt
+end

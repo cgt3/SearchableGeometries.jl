@@ -224,7 +224,7 @@ get_extreme_point(bv, [1.0, -1.0]) # [2.0, 0.0]
 """
 function get_extreme_point(bv::BoundingVolume, n::Vector{<:Real})
     if length(n) != length(bv.lb)
-        throw("SearchableGeometries.GeometricPrimitives.get_extreme_point: normal vector dimension($(length(n))) does not match bounding volume dimension($(length(bv.lb)))")
+        throw("SearchableGeometries.GeometricPrimitives.Hyperplane: normal vector dimension($(length(n))) does not match bounding volume dimension($(length(bv.lb)))")
     end
 
     T = promote_type(eltype(bv.lb), eltype(bv.ub), eltype(n))
