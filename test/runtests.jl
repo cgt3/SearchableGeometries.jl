@@ -10,4 +10,7 @@ using SafeTestsets
     @safetestset "Hyperplanes:" begin
         include("GeometricPrimitives/Hyperplane_test.jl")
     end
+    @safetestset "Cones:" begin
+        include("GeometricPrimitives/Cone_test.jl")
+    end
 end

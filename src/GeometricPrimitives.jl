@@ -186,5 +186,6 @@ include("hyperplanes.jl")
 export Cone
 
 # Cone-only functions
+export get_R, get_radii
 include("cones.jl")
 end # module GeometricPrimitives
