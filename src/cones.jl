@@ -52,9 +52,9 @@ function get_bound_lines(cone::Cone)
 
     lb_scalings = similar(cone.vertex)
     ub_scalings = similar(cone.vertex)
+    e_i  = zeros(length(cone.vertex))
 
     for i in eachindex(cone.vertex)
-        e_i  = zeros(length(cone.vertex))
         e_i[i] = 1.0
         if isapprox(abs(e_i' * cone.axis), 1.0)
             lb_scalings[i] = cone.axis[i]
@@ -62,9 +62,15 @@ function get_bound_lines(cone::Cone)
         else
             u0 = cone.vertex + e_i
             R0, r = get_radii(cone, u0)
-            lb_scalings[i] = (R0 - r / cone.slope) / (cone.axis' * e_i)
-            ub_scalings[i] = (R0 + r / cone.slope) / (cone.axis' * e_i)
+
+            R_bound = r / cone.slope
+            u_ub_i = u0[i] + (R_bound - R0)*cone.axis[i]
+            u_lb_i = (cone.vertex - e_i)[i] + (R_bound + R0)*cone.axis[i]
+
+            lb_scalings[i] = ( u_lb_i - cone.vertex[i] ) / R_bound
+            ub_scalings[i] = ( u_ub_i - cone.vertex[i] ) / R_bound
         end
+        e_i[i] = 0.0
     end
 
     return Line(cone.vertex, lb_scalings), Line(cone.vertex, ub_scalings)
