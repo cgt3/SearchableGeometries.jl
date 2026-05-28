@@ -1,4 +1,7 @@
 using SearchableGeometries.GeometricPrimitives
+using SearchableGeometries.GeometricPrimitives:
+    get_reduced_dim_ball,
+    tighten_bv_bounds!
 
 # Ball Constructors --------------------------------------------------------
 @testset "Constructing Balls: Invalid radius" begin

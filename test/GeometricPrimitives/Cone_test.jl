@@ -1,4 +1,8 @@
 using SearchableGeometries.GeometricPrimitives
+using SearchableGeometries.GeometricPrimitives:
+    get_R,
+    get_radii,
+    get_bounding_radii
 using LinearAlgebra: norm
 
 # Cone constructors ----------------------------------------------------------

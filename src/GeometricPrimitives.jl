@@ -4,10 +4,10 @@ using LinearAlgebra
 import Base: ==, getindex
 
 # Data types
-export SearchableGeometry
+export SearchableGeometry, BoundingVolume, Ball, Hyperplane, Line, Cone
 
 # General functions
-export is_contained, intersects, get_intersection
+export is_contained, intersects, get_intersection, get_closest_point, get_furthest_point
 
 const DEFAULT_BV_POINT_TOL = 1e-15
 
@@ -125,9 +125,6 @@ function get_furthest_point end
 # Lines
 # ----------------------------------------------------------
 
-# Data type
-export Line
-
 struct Line
     source::Vector
     dir::Vector
@@ -145,47 +142,12 @@ function (line::Line)(s::Real)
     return line.source + line.dir * s
 end
 
-# ----------------------------------------------------------
-# Bounding Volumes
-# ----------------------------------------------------------
-
-# Data type
-export BoundingVolume
-
-# BV-only functions
-export get_closest_point, get_furthest_point, face_index_to_spatial_index, get_face_bounding_volume
+# include files for geometric primitives
 include("boundingvolumes.jl")
 
-# ----------------------------------------------------------
-# Balls
-# ----------------------------------------------------------
-
-# Data type
-export Ball
-
-# Ball-only functions
-export tighten_bv_bounds!, get_reduced_dim_ball
 include("balls.jl")
 
-# ----------------------------------------------------------
-# Hyperplanes
-# ----------------------------------------------------------
-
-# Data type
-export Hyperplane
-
-# Hyperplane-only functions
-export tighten_bv_bounds, get_extreme_point, get_antiextreme_point
 include("hyperplanes.jl")
 
-# ----------------------------------------------------------
-# Cones
-# ----------------------------------------------------------
-
-# Data type
-export Cone
-
-# Cone-only functions
-export get_R, get_radii, get_bounding_radii
 include("cones.jl")
 end # module GeometricPrimitives

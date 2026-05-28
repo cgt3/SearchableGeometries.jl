@@ -52,7 +52,7 @@ function get_bound_lines(cone::Cone)
 
     lb_scalings = similar(cone.vertex)
     ub_scalings = similar(cone.vertex)
-    e_i  = zeros(length(cone.vertex))
+    e_i = zeros(length(cone.vertex))
 
     for i in eachindex(cone.vertex)
         e_i[i] = 1.0

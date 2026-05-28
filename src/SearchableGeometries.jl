@@ -40,16 +40,6 @@ using LinearAlgebra
 # Submodels
 export GeometricPrimitives
 include("GeometricPrimitives.jl")
-using .GeometricPrimitives:
-    BoundingVolume, 
-    Ball, 
-    Hyperplane
-
-import .GeometricPrimitives:
-    is_contained, 
-    intersects, 
-    get_intersection, 
-    get_closest_point, 
-    get_furthest_point
+using .GeometricPrimitives
 
 end # module SearchableGeometries
