@@ -134,7 +134,7 @@ struct Line
             throw("SearchableGeometries.GeometricPrimitives.Line: direction vector and source point dimension must match")
         end
 
-        return new(source, dir ./ norm(dir))
+        return new(source, dir)# ./ norm(dir))
     end
 end
 

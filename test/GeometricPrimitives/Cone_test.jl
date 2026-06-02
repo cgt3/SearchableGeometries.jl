@@ -2,7 +2,8 @@ using SearchableGeometries.GeometricPrimitives
 using SearchableGeometries.GeometricPrimitives:
     get_R,
     get_radii,
-    get_bounding_radii
+    get_bounding_radii,
+    get_bound_lines
 using LinearAlgebra: norm
 
 # Cone constructors ----------------------------------------------------------
@@ -156,4 +157,124 @@ end
     R_min, R_max = get_bounding_radii(cone, bv)
     @test R_min == -1.0
     @test R_max == 1.0
+end
+
+# `get_bound_lines(cone)` ----------------------------------------------------------------
+@testset "get_bound_lines(cone): Cone with zero slope returns identical lines" begin
+    cone = Cone([0.0, 0.0], [1.0, 0.0], 0.0)
+    lb_line, ub_line = get_bound_lines(cone)
+   
+    @test all(lb_line.source .== cone.vertex)
+    @test all(ub_line.source .== cone.vertex)
+
+    @test all(lb_line.dir .== cone.axis)
+    @test all(ub_line.dir .== cone.axis)
+
+    # At axial radius R = 1, the cone reaches
+    @test all(lb_line(1.0) .== cone.vertex .+ cone.axis)
+    @test all(ub_line(1.0) .== cone.vertex .+ cone.axis)
+end
+
+@testset "get_bound_lines(cone): 2D axis-aligned cone with nonzero slope" begin
+    cone = Cone([0.0, 0.0], [1.0, 0.0], 1.0)
+    lb_line, ub_line = get_bound_lines(cone)
+    
+    @test all(lb_line.source .== cone.vertex)
+    @test all(ub_line.source .== cone.vertex)
+
+    @test all(lb_line.dir .== [1.0, -1.0])
+    @test all(ub_line.dir .== [1.0, 1.0])
+
+    # At axial radius R = 1, the cone reaches y = ±1
+    @test all(lb_line(1.0) .== [1.0, -1.0])
+    @test all(ub_line(1.0) .== [1.0, 1.0])
+end
+
+@testset "get_bound_lines(cone): 2D diagonal cone with nonzero slope" begin
+    cone = Cone([0.0, 0.0], [1.0, 1.0], 1.0)
+    lb_line, ub_line = get_bound_lines(cone)
+
+    @test all(lb_line.source .== cone.vertex)
+    @test all(ub_line.source .== cone.vertex)
+
+    @test isapprox(lb_line.dir, [0.0, 0.0]; atol=1e-6)
+    @test isapprox(ub_line.dir, [sqrt(2.0), sqrt(2.0)]; atol=1e-6)
+
+    # At axial radius R = 2, the coordinate-wise bounds are:
+    # lower = [0, 0], upper = [2sqrt(2), 2sqrt(2)]
+    @test isapprox(lb_line(2.0), [0.0, 0.0]; atol=1e-6)
+    @test isapprox(ub_line(2.0), [2sqrt(2.0), 2sqrt(2.0)]; atol=1e-6)
+end
+
+@testset "get_bound_lines(cone): 3D z-axis cone with nonzero slope" begin
+    cone = Cone([0.0, 0.0, 0.0], [0.0, 0.0, 1.0], 1.0)
+    lb_line, ub_line = get_bound_lines(cone)
+
+    @test all(lb_line.source .== cone.vertex)
+    @test all(ub_line.source .== cone.vertex)
+
+    # For axis = [0, 0, 1] and slope = 1:
+    # x lower/upper scalings are -1 and 1
+    # y lower/upper scalings are -1 and 1
+    # z lower/upper scalings are  1 and 1
+    @test isapprox(lb_line.dir, [-1.0, -1.0, 1.0]; atol=1e-6)
+    @test isapprox(ub_line.dir, [ 1.0,  1.0, 1.0]; atol=1e-6)
+
+    # At axial radius R = 2, the coordinate-wise bounds are:
+    # lower = [-2, -2, 2], upper = [2, 2, 2]
+    @test isapprox(lb_line(2.0), [-2.0, -2.0, 2.0]; atol=1e-6)
+    @test isapprox(ub_line(2.0), [ 2.0,  2.0, 2.0]; atol=1e-6)
+end
+
+# `BoundingVolume(cone, R_min, R_max)` ----------------------------------------------------------------
+@testset "BoundingVolume(cone, R_min, R_max): invalid radii throw errors" begin
+    cone = Cone([0.0, 0.0], [1.0, 0.0], 1.0)
+
+    @test_throws "SearchableGeometries.GeometricPrimitives.Cone: Cannot construct bounding volume with R_max < R_min" BoundingVolume(cone, 2.0, 1.0)
+
+    @test_throws "SearchableGeometries.GeometricPrimitives.Cone: R_min and R_max do not satisfy 0 <= R_min <= R_max" BoundingVolume(cone, -1.0, 2.0)
+end
+
+@testset "BoundingVolume(cone, R_min, R_max): 2D axis-aligned cone with zero slope" begin
+    cone = Cone([0.0, 0.0], [1.0, 0.0], 0.0)
+    bv = BoundingVolume(cone, 0.0, 1.0)
+
+    @test all(bv.lb .== [0.0, 0.0])
+    @test all(bv.ub .== [1.0, 0.0])
+end
+
+@testset "BoundingVolume(cone, R_min, R_max): 2D diagonal cone with nonzero slope" begin
+    cone = Cone([0.0, 0.0], [1.0, 1.0], 1.0)
+
+    bv = BoundingVolume(cone, 0.0, 2.0)
+
+    @test isapprox(bv.lb, [0.0, 0.0]; atol=1e-6)
+    @test isapprox(bv.ub, [2sqrt(2.0), 2sqrt(2.0)]; atol=1e-6)
+end
+
+@testset "BoundingVolume(cone, R_min, R_max): 3D z-axis cone" begin
+    cone = Cone([0.0, 0.0, 0.0], [0.0, 0.0, 1.0], 1.0)
+
+    bv = BoundingVolume(cone, 0.0, 2.0)
+
+    @test isapprox(bv.lb, [-2.0, -2.0, 0.0]; atol=1e-6)
+    @test isapprox(bv.ub, [ 2.0,  2.0, 2.0]; atol=1e-6)
+end
+
+@testset "BoundingVolume(cone, R_min, R_max): 3D cone with arbitrary axis and vertex" begin
+    cone = Cone([1.0, 2.0, 3.0], [1.0, 1.0, 1.0], 1.0)
+
+    R_max = 2.0
+    bv = BoundingVolume(cone, 0.0, R_max)
+
+    # Normalized axis = [1/sqrt(3), 1/sqrt(3), 1/sqrt(3)]
+    # slope = 1
+    #
+    # lb_scaling_i = 1/sqrt(3) - sqrt(2/3)
+    # ub_scaling_i = 1/sqrt(3) + sqrt(2/3)
+    lower_disp = R_max * (1 / sqrt(3.0) - sqrt(2.0 / 3.0))
+    upper_disp = R_max * (1 / sqrt(3.0) + sqrt(2.0 / 3.0))
+
+    @test isapprox(bv.lb, [1.0 + lower_disp, 2.0 + lower_disp, 3.0 + lower_disp]; atol=1e-6)
+    @test isapprox(bv.ub, [1.0 + upper_disp, 2.0 + upper_disp, 3.0 + upper_disp]; atol=1e-6)
 end

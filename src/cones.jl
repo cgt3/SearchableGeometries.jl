@@ -47,7 +47,7 @@ end
 
 function get_bound_lines(cone::Cone)
     if cone.slope == 0
-        return Line(cone.vertex, cone.axis)
+        return Line(cone.vertex, cone.axis), Line(cone.vertex, cone.axis)
     end
 
     lb_scalings = similar(cone.vertex)
@@ -80,4 +80,27 @@ function get_bounding_radii(cone::Cone, query_bv::BoundingVolume)
     closest_R_pt  = get_antiextreme_point(query_bv, cone.axis)
     furthest_R_pt = get_extreme_point(query_bv, cone.axis)
     return get_R(cone, closest_R_pt), get_R(cone, furthest_R_pt)
+end
+
+function BoundingVolume(lb_func::Line, ub_func::Line, s1::Real, s2::Real; tol::Real=DEFAULT_BV_POINT_TOL)
+    lb1 = lb_func(s1)
+    ub1 = ub_func(s1)
+
+    lb2 = lb_func(s2)
+    ub2 = ub_func(s2)
+
+    return BoundingVolume(min.(lb1, lb2), max.(ub1, ub2), tol=tol)
+end
+
+function BoundingVolume(cone::Cone, R_min::Real, R_max::Real, tol::Real=DEFAULT_BV_POINT_TOL)
+    if R_max < R_min
+        throw("SearchableGeometries.GeometricPrimitives.Cone: Cannot construct bounding volume with R_max < R_min (R_max=$(R_max), R_min=$(R_min))")
+    end
+
+    if R_min < 0
+        throw("SearchableGeometries.GeometricPrimitives.Cone: R_min and R_max do not satisfy 0 <= R_min <= R_max (R_min=$(R_min), R_max=$(R_max))")
+    end
+    
+    cone_lb, cone_ub = get_bound_lines(cone)
+    return BoundingVolume(cone_lb, cone_ub, R_min, R_max, tol=tol)
 end
