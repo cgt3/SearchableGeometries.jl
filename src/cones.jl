@@ -132,3 +132,19 @@ function get_alpha(bv::BoundingVolume, vertex::Vector{<:Real}, axis::Vector{<:Re
     return r / R
 end
 
+function is_contained(cone::Cone, query_bv::BoundingVolume; include_boundary::Bool=true, tol::Real=DEFAULT_BV_POINT_TOL)
+    if length(query_bv.lb) != length(cone.vertex)
+        throw("SearchableGeometries.GeometricPrimitives.Cone: bounding volume dimension($(length(query_bv.lb))) does not match cone dimension($(length(cone.vertex)))")
+    end
+
+    R_min, _ = get_bounding_radii(cone, query_bv)
+
+    alpha_max = get_alpha(query_bv, cone.vertex, cone.axis; is_max=true)
+
+    if include_boundary
+        return R_min >= -tol && alpha_max <= cone.slope + tol
+    else
+        return R_min > tol && alpha_max < cone.slope - tol
+    end
+end
+

@@ -353,3 +353,66 @@ end
     @test isapprox(alpha_max, expected_max; atol=1e-6)
     @test isapprox(alpha_min, expected_min; atol=1e-6)
 end
+
+# `is_contained(cone, bv)` ----------------------------------------------------------------
+@testset "is_contained(cone, bv): Cone and bounding volume dimensions do not match" begin
+    cone = Cone([0.0, 0.0], [1.0, 0.0], 1.0)
+    bv = BoundingVolume([-1.0, -1.0, -1.0], [1.0, 1.0, 1.0])
+    @test_throws "SearchableGeometries.GeometricPrimitives.Cone: bounding volume dimension(3) does not match cone dimension(2)" is_contained(cone, bv)
+end
+
+@testset "is_contained(cone, bv): 2D BV fully inside x-axis cone" begin
+    cone = Cone([0.0, 0.0], [1.0, 0.0], 1.0)
+    bv = BoundingVolume([1.0, -0.5], [2.0, 0.5])
+
+    @test is_contained(cone, bv; include_boundary=true)
+    @test is_contained(cone, bv; include_boundary=false)
+end
+
+@testset "is_contained(cone, bv): 2D BV outside because slope is too small" begin
+    cone = Cone([0.0, 0.0], [1.0, 0.0], 0.5)
+    bv = BoundingVolume([1.0, -2.0], [2.0, 2.0])
+
+    @test !is_contained(cone, bv; include_boundary=true)
+    @test !is_contained(cone, bv; include_boundary=false)
+end
+
+@testset "is_contained(cone, bv): 2D BV exactly on cone boundary" begin
+    cone = Cone([0.0, 0.0], [1.0, 0.0], 1.0)
+    bv = BoundingVolume([1.0, -2.0], [2.0, 2.0])
+
+    # get_alpha gives alpha_max = 1.0.
+    # Therefore the BV is accepted with boundary included,
+    # but rejected for strict containment.
+    @test is_contained(cone, bv; include_boundary=true)
+    @test !is_contained(cone, bv; include_boundary=false)
+end
+
+@testset "is_contained(cone, bv): BV behind cone vertex is not contained" begin
+    cone = Cone([0.0, 0.0], [1.0, 0.0], 1.0)
+    bv = BoundingVolume([-2.0, -0.5], [-1.0, 0.5])
+
+    # Even if alpha is small, R_min < 0, so the BV is behind the cone.
+    @test !is_contained(cone, bv; include_boundary=true)
+    @test !is_contained(cone, bv; include_boundary=false)
+end
+
+@testset "is_contained(cone, bv): 3D BV fully inside z-axis cone" begin
+    cone = Cone([0.0, 0.0, 0.0], [0.0, 0.0, 1.0], 1.0)
+    bv = BoundingVolume([0.0, 0.5, 1.0], [2.0, 2.5, 3.0])
+
+    # From earlier:
+    # alpha_max = sqrt(2^2 + 2.5^2) / 3 ≈ 1.067,
+    # so this BV is NOT contained in a slope-1 cone.
+    @test !is_contained(cone, bv; include_boundary=true)
+    @test !is_contained(cone, bv; include_boundary=false)
+end
+
+@testset "is_contained(cone, bv): 3D BV contained in wider z-axis cone" begin
+    cone = Cone([0.0, 0.0, 0.0], [0.0, 0.0, 1.0], 1.1)
+    bv = BoundingVolume([0.0, 0.5, 1.0], [2.0, 2.5, 3.0])
+
+    # alpha_max = sqrt(2^2 + 2.5^2) / 3 ≈ 1.067 ≈ 1.067 < 1.1
+    @test is_contained(cone, bv; include_boundary=true)
+    @test is_contained(cone, bv; include_boundary=false)
+end
