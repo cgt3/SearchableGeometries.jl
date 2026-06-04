@@ -461,3 +461,39 @@ function get_face_bounding_volume(face_index::Integer, bv::BoundingVolume; tol::
 
     return BoundingVolume(face_lb, face_ub; tol=tol)
 end
+
+function intersects(bv::BoundingVolume, line::Line; include_boundary=true, tol::Real=DEFAULT_BV_POINT_TOL)
+    if length(bv.lb) != length(line.source)
+        throw("SearchableGeometries.GeometricPrimitives.Line: bounding volume dimension($(length(bv.lb))) does not match line dimension($(length(line.source)))")
+    end
+    
+    # If the line is a point
+    if all(abs.(line.dir) .<= tol)
+        return is_contained(bv, line.source; include_boundary=include_boundary)
+    end
+
+    s_min = include_boundary ? 0.0 : tol
+    s_max = Inf
+
+    for i in eachindex(bv.lb)
+        if abs(line.dir[i]) <= tol
+            # Line is parallel to this coordinate slab.
+            if (include_boundary && (line.source[i] < bv.lb[i] - tol || line.source[i] > bv.ub[i] + tol)) ||
+                (!include_boundary && (line.source[i] <= bv.lb[i] + tol || line.source[i] >= bv.ub[i] - tol))
+                return false
+            end
+        else
+            s1 = (bv.lb[i] - line.source[i]) / line.dir[i]
+            s2 = (bv.ub[i] - line.source[i]) / line.dir[i]
+
+            s_min = max(s_min, min(s1, s2))
+            s_max = min(s_max, max(s1, s2))
+
+            if (include_boundary && s_min > s_max + tol) ||
+               (!include_boundary && s_min >= s_max - tol)
+                return false
+            end
+        end
+    end
+    return true
+end

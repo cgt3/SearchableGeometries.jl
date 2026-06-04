@@ -260,3 +260,99 @@ end
     @test get_face_bounding_volume(5, bv) == back
     @test get_face_bounding_volume(6, bv) == top
 end
+
+# BV -> Line -------------------------------------------------------------------
+# `intersects(bv, line)`: ------------------------------------------------------
+@testset "intersects(bv, line): dimension mismatch throws" begin
+    bv = BoundingVolume([0.0, 0.0], [2.0, 2.0])
+    line = Line([0.0, 0.0, 0.0], [1.0, 0.0, 0.0]; normalize=false)
+
+    @test_throws "SearchableGeometries.GeometricPrimitives.Line: bounding volume dimension(2) does not match line dimension(3)" intersects(bv, line)
+end
+
+@testset "intersects(bv, line): positive ray intersects 2D BV" begin
+    bv = BoundingVolume([0.0, 0.0], [2.0, 2.0])
+
+    # Ray starts left of BV and points right through y = 1.
+    line = Line([-1.0, 1.0], [1.0, 0.0]; normalize=false)
+
+    @test intersects(bv, line; include_boundary=true)
+    @test intersects(bv, line; include_boundary=false)
+end
+
+@testset "intersects(bv, line): positive ray points away from BV" begin
+    bv = BoundingVolume([0.0, 0.0], [2.0, 2.0])
+
+    # Infinite line would hit the BV, but positive ray points away.
+    line = Line([3.0, 1.0], [1.0, 0.0]; normalize=false)
+
+    @test !intersects(bv, line; include_boundary=true)
+    @test !intersects(bv, line; include_boundary=false)
+end
+
+@testset "intersects(bv, line): positive ray points toward BV" begin
+    bv = BoundingVolume([0.0, 0.0], [2.0, 2.0])
+
+    # Ray starts right of BV and points left through y = 1.
+    line = Line([3.0, 1.0], [-1.0, 0.0]; normalize=false)
+
+    @test intersects(bv, line; include_boundary=true)
+    @test intersects(bv, line; include_boundary=false)
+end
+
+@testset "intersects(bv, line): ray touches boundary only" begin
+    bv = BoundingVolume([0.0, 0.0], [2.0, 2.0])
+
+    # Ray runs along lower boundary y = 0.
+    line = Line([-1.0, 0.0], [1.0, 0.0]; normalize=false)
+
+    @test intersects(bv, line; include_boundary=true)
+    @test !intersects(bv, line; include_boundary=false)
+end
+
+@testset "intersects(bv, line): ray starts on boundary and enters BV" begin
+    bv = BoundingVolume([0.0, 0.0], [2.0, 2.0])
+
+    # Starts on left boundary and moves through the interior.
+    line = Line([0.0, 1.0], [1.0, 0.0]; normalize=false)
+
+    @test intersects(bv, line; include_boundary=true)
+    @test intersects(bv, line; include_boundary=false)
+end
+
+@testset "intersects(bv, line): point-line inside BV" begin
+    bv = BoundingVolume([0.0, 0.0], [2.0, 2.0])
+
+    line = Line([1.0, 1.0], [0.0, 0.0]; normalize=false)
+
+    @test intersects(bv, line; include_boundary=true)
+    @test intersects(bv, line; include_boundary=false)
+end
+
+@testset "intersects(bv, line): point-line on boundary" begin
+    bv = BoundingVolume([0.0, 0.0], [2.0, 2.0])
+
+    line = Line([0.0, 1.0], [0.0, 0.0]; normalize=false)
+
+    @test intersects(bv, line; include_boundary=true)
+    @test !intersects(bv, line; include_boundary=false)
+end
+
+@testset "intersects(bv, line): point-line outside BV" begin
+    bv = BoundingVolume([0.0, 0.0], [2.0, 2.0])
+
+    line = Line([3.0, 1.0], [0.0, 0.0]; normalize=false)
+
+    @test !intersects(bv, line; include_boundary=true)
+    @test !intersects(bv, line; include_boundary=false)
+end
+
+@testset "intersects(bv, line): 3D ray intersects BV" begin
+    bv = BoundingVolume([0.0, 0.0, 0.0], [2.0, 2.0, 2.0])
+
+    # Ray passes through the box along x direction.
+    line = Line([-1.0, 1.0, 1.0], [1.0, 0.0, 0.0]; normalize=false)
+
+    @test intersects(bv, line; include_boundary=true)
+    @test intersects(bv, line; include_boundary=false)
+end
