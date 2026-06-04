@@ -129,12 +129,22 @@ struct Line
     source::Vector
     dir::Vector
 
-    function Line(source::Vector, dir::Vector)
+    function Line(source::Vector{<:Real}, dir::Vector{<:Real}; normalize::Bool=true)
         if length(dir) != length(source)
             throw("SearchableGeometries.GeometricPrimitives.Line: direction vector and source point dimension must match")
         end
 
-        return new(source, dir)# ./ norm(dir))
+        if normalize
+            dir_norm = norm(dir)
+
+            if iszero(dir_norm)
+                throw(ArgumentError("SearchableGeometries.GeometricPrimitives.Line: cannot normalize zero direction vector"))
+            end
+
+            dir = dir ./ dir_norm
+        end
+
+        return new(source, dir)
     end
 end
 
