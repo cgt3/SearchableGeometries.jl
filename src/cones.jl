@@ -47,7 +47,7 @@ end
 
 function get_bound_lines(cone::Cone)
     if cone.slope == 0
-        return Line(cone.vertex, cone.axis), Line(cone.vertex, cone.axis)
+        return Line(cone.vertex, cone.axis, normalize=false), Line(cone.vertex, cone.axis, normalize=false)
     end
 
     lb_scalings = similar(cone.vertex)
@@ -73,7 +73,7 @@ function get_bound_lines(cone::Cone)
         e_i[i] = 0.0
     end
 
-    return Line(cone.vertex, lb_scalings), Line(cone.vertex, ub_scalings)
+    return Line(cone.vertex, lb_scalings; normalize=false), Line(cone.vertex, ub_scalings; normalize=false)
 end
 
 function get_bounding_radii(cone::Cone, query_bv::BoundingVolume)
@@ -82,14 +82,14 @@ function get_bounding_radii(cone::Cone, query_bv::BoundingVolume)
     return get_R(cone, closest_R_pt), get_R(cone, furthest_R_pt)
 end
 
-function BoundingVolume(lb_func::Line, ub_func::Line, s1::Real, s2::Real; tol::Real=DEFAULT_BV_POINT_TOL)
-    lb1 = lb_func(s1)
-    ub1 = ub_func(s1)
+function BoundingVolume(lb_func::Line, ub_func::Line, R1::Real, R2::Real; tol::Real=DEFAULT_BV_POINT_TOL)
+    lb1 = lb_func(R1)
+    ub1 = ub_func(R1)
 
-    lb2 = lb_func(s2)
-    ub2 = ub_func(s2)
+    lb2 = lb_func(R2)
+    ub2 = ub_func(R2)
 
-    return BoundingVolume(min.(lb1, lb2), max.(ub1, ub2), tol=tol)
+    return BoundingVolume(min.(lb1, lb2), max.(ub1, ub2); tol=tol)
 end
 
 function BoundingVolume(cone::Cone, R_min::Real, R_max::Real, tol::Real=DEFAULT_BV_POINT_TOL)
@@ -102,5 +102,33 @@ function BoundingVolume(cone::Cone, R_min::Real, R_max::Real, tol::Real=DEFAULT_
     end
     
     cone_lb, cone_ub = get_bound_lines(cone)
-    return BoundingVolume(cone_lb, cone_ub, R_min, R_max, tol=tol)
+    return BoundingVolume(cone_lb, cone_ub, R_min, R_max; tol=tol)
 end
+
+function get_alpha(bv::BoundingVolume, vertex::Vector{<:Real}, axis::Vector{<:Real}; is_max::Bool=true)
+    s = is_max ? 1.0 : -1.0
+    e_i = zeros(length(vertex))
+    p = 0.5 * (bv.lb + bv.ub)
+
+    for i in eachindex(vertex)
+        d_vec = p .- vertex
+        R_vec = (d_vec' * axis) * axis
+        r_vec = d_vec .- R_vec
+        e_i[i] = 1.0
+
+        if s *  (e_i' * r_vec) >= 0
+            p[i] = bv.ub[i]
+
+        else
+            p[i] = bv.lb[i]
+        end
+        e_i[i] = 0.0
+    end
+    
+    # Compute alpha from the selected point
+    R = (p .- vertex)' * axis
+    r = norm((p .- vertex) .- R * axis)
+
+    return r / R
+end
+

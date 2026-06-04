@@ -3,7 +3,8 @@ using SearchableGeometries.GeometricPrimitives:
     get_R,
     get_radii,
     get_bounding_radii,
-    get_bound_lines
+    get_bound_lines,
+    get_alpha
 using LinearAlgebra: norm
 
 # Cone constructors ----------------------------------------------------------
@@ -277,4 +278,78 @@ end
 
     @test isapprox(bv.lb, [1.0 + lower_disp, 2.0 + lower_disp, 3.0 + lower_disp]; atol=1e-6)
     @test isapprox(bv.ub, [1.0 + upper_disp, 2.0 + upper_disp, 3.0 + upper_disp]; atol=1e-6)
+end
+
+# `get_alpha(bv, vertex, axis)` ----------------------------------------------------------------
+@testset "get_alpha(bv, vertex, axis): 2D x-axis" begin
+    bv = BoundingVolume([0.0, 0.0], [2.0, 2.0])
+    vertex = [0.0, 0.0]
+    axis = [1.0, 0.0]
+
+    alpha_max = get_alpha(bv, vertex, axis; is_max=true)
+    alpha_min = get_alpha(bv, vertex, axis; is_max=false)
+
+    # alpha_max chooses p = [2, 2].
+    # R = 2, r = 2, alpha = 1.
+    @test isapprox(alpha_max, 1.0; atol=1e-6)
+
+    # alpha_min chooses p = [2, 0].
+    # R = 2, r = 0, alpha = 0.
+    @test isapprox(alpha_min, 0.0; atol=1e-6)
+end
+
+@testset "get_alpha(bv, vertex, axis): 2D diagonal axis" begin
+    bv = BoundingVolume([0.0, 0.0], [2.0, 2.0])
+    vertex = [0.0, 0.0]
+    axis = [1.0, 1.0] ./ sqrt(2.0)
+
+    alpha_max = get_alpha(bv, vertex, axis; is_max=true)
+    alpha_min = get_alpha(bv, vertex, axis; is_max=false)
+
+    # alpha_max chooses p = [2, 0].
+    # R = 2sqrt(2), r = 2sqrt(2), alpha = 1.
+    @test isapprox(alpha_max, 1.0; atol=1e-6)
+
+    # alpha_min chooses p = [0, 0].
+    # R = 0, r = 0, alpha = NaN.
+    @test isnan(alpha_min)
+end
+
+@testset "get_alpha(bv, vertex, axis): 2D y-axis" begin
+    bv = BoundingVolume([0.0, 0.0], [2.0, 2.0])
+    vertex = [0.0, 0.0]
+    axis = [0.0, 1.0]
+
+    alpha_max = get_alpha(bv, vertex, axis; is_max=true)
+    alpha_min = get_alpha(bv, vertex, axis; is_max=false)
+
+    # alpha_max chooses p = [2, 2].
+    # R = 2, r = 2, alpha = 1.
+    @test isapprox(alpha_max, 1.0; atol=1e-6)
+
+    # alpha_min chooses p = [0, 2].
+    # R = 2, r = 0, alpha = 0.
+    @test isapprox(alpha_min, 0.0; atol=1e-6)
+end
+
+@testset "get_alpha: 3D z-axis" begin
+    bv = BoundingVolume([0.0, 0.5, 1.0], [2.0, 2.5, 3.0])
+    vertex = [0.0, 0.0, 0.0]
+    axis = [0.0, 0.0, 1.0]
+
+    alpha_max = get_alpha(bv, vertex, axis; is_max=true)
+    alpha_min = get_alpha(bv, vertex, axis; is_max=false)
+
+    # alpha_max chooses p = [2.0, 2.5, 3.0]
+    # R = 2.0
+    # r = sqrt(2.0^2 + 2.5^2)
+    expected_max = sqrt(2.0^2 + 2.5^2) / 3.0
+
+    # alpha_min chooses p = [0.0, 0.5, 3.0]
+    # R = 2.0
+    # r = sqrt(0.0^2 + 0.5^2)
+    expected_min = sqrt(0.0^2 + 0.5^2) / 3.0
+
+    @test isapprox(alpha_max, expected_max; atol=1e-6)
+    @test isapprox(alpha_min, expected_min; atol=1e-6)
 end
