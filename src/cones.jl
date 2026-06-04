@@ -173,3 +173,29 @@ function intersects(cone::Cone, bv::BoundingVolume; include_boundary::Bool=true,
         end
     end
 end
+
+function get_intersection(cone::Cone, bv::BoundingVolume; tol::Real=DEFAULT_BV_POINT_TOL)
+    if !intersects(cone, bv; include_boundary=true, tol=tol)
+        return BoundingVolume()
+    end
+    
+    intersection = bv
+    cone_lbs, cone_ubs = get_bound_lines(cone)
+
+    while !intersection.is_empty
+        R_min, R_max = get_bounding_radii(cone, intersection)
+
+        bv_cone = BoundingVolume(cone_lbs, cone_ubs, max(0.0, R_min), R_max; tol=tol)
+
+        old_intersection = intersection
+        intersection = get_intersection(old_intersection, bv_cone; tol=tol)
+
+        if isapprox(old_intersection.lb, intersection.lb; atol=tol) &&
+        isapprox(old_intersection.ub, intersection.ub; atol=tol)
+            return intersection
+        end
+    end
+
+    # If we reach here the intersection is empty, so we return the empty bounding volume.
+    return BoundingVolume()
+end

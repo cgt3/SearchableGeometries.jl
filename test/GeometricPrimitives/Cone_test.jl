@@ -491,3 +491,80 @@ end
     @test !intersects(cone, bv; include_boundary=true)
     @test !intersects(cone, bv; include_boundary=false)
 end
+
+# `get_intersection(cone, bv)` ----------------------------------------------------------------
+@testset "get_intersection(cone, bv): axis ray passes through BV" begin
+    cone = Cone([0.0, 0.0], [1.0, 0.0], 0.5)
+    bv = BoundingVolume([1.0, -0.25], [2.0, 0.25])
+
+    intersection = get_intersection(cone, bv)
+
+    @test !intersection.is_empty
+    @test isapprox(intersection.lb, [1.0, -0.25]; atol=1e-6)
+    @test isapprox(intersection.ub, [2.0,  0.25]; atol=1e-6)
+end
+
+@testset "get_intersection(cone, bv): BV intersects cone but not axis ray" begin
+    cone = Cone([0.0, 0.0], [1.0, 0.0], 1.0)
+
+    # This BV lies above the x-axis but still intersects the cone y <= x.
+    bv = BoundingVolume([1.0, 0.5], [2.0, 1.5])
+
+    intersection = get_intersection(cone, bv)
+
+    # The exact intersection is not rectangular, but its bounding volume
+    # is still the original BV.
+    @test !intersection.is_empty
+    @test isapprox(intersection.lb, [1.0, 0.5]; atol=1e-6)
+    @test isapprox(intersection.ub, [2.0, 1.5]; atol=1e-6)
+end
+
+@testset "get_intersection(cone, bv): BV touches cone boundary only" begin
+    cone = Cone([0.0, 0.0], [1.0, 0.0], 1.0)
+
+    # This BV touches the upper cone boundary y = x at [2, 2].
+    bv = BoundingVolume([1.0, 2.0], [2.0, 3.0])
+
+    intersection = get_intersection(cone, bv)
+
+    # The exact intersection is the point [2, 2].
+    #  bounding-box tightening returns a conservative BV:
+    # x ∈ [1, 2], y = 2.
+    @test !intersection.is_empty
+    @test isapprox(intersection.lb, [1.0, 2.0]; atol=1e-6)
+    @test isapprox(intersection.ub, [2.0, 2.0]; atol=1e-6)
+end
+
+@testset "get_intersection(cone, bv): BV completely outside cone" begin
+    cone = Cone([0.0, 0.0], [1.0, 0.0], 1.0)
+
+    # Entire BV is above the cone y > x.
+    bv = BoundingVolume([1.0, 3.0], [2.0, 4.0])
+
+    intersection = get_intersection(cone, bv)
+
+    @test intersection.is_empty
+end
+
+@testset "get_intersection(cone, bv): 3D z-axis cone intersects BV through axis ray" begin
+    cone = Cone([0.0, 0.0, 0.0], [0.0, 0.0, 1.0], 1.0)
+
+    bv = BoundingVolume([-0.5, -0.5, 1.0], [0.5, 0.5, 2.0])
+
+    intersection = get_intersection(cone, bv)
+
+    @test !intersection.is_empty
+    @test isapprox(intersection.lb, [-0.5, -0.5, 1.0]; atol=1e-6)
+    @test isapprox(intersection.ub, [ 0.5,  0.5, 2.0]; atol=1e-6)
+end
+
+@testset "get_intersection(cone, bv): 3D z-axis cone misses BV outside slope" begin
+    cone = Cone([0.0, 0.0, 0.0], [0.0, 0.0, 1.0], 1.0)
+
+    # At z around 1, radial distance is about 3, so it is outside slope-1 cone.
+    bv = BoundingVolume([3.0, 0.0, 1.0], [4.0, 1.0, 2.0])
+
+    intersection = get_intersection(cone, bv)
+
+    @test intersection.is_empty
+end
