@@ -148,3 +148,28 @@ function is_contained(cone::Cone, query_bv::BoundingVolume; include_boundary::Bo
     end
 end
 
+function intersects(cone::Cone, bv::BoundingVolume; include_boundary::Bool=true, tol::Real=DEFAULT_BV_POINT_TOL)
+    if length(bv.lb) != length(cone.vertex)
+        throw("SearchableGeometries.GeometricPrimitives.Cone: bounding volume dimension($(length(bv.lb))) does not match cone dimension($(length(cone.vertex)))")
+    end
+
+    if intersects(bv, Line(cone.vertex, cone.axis; normalize=true); include_boundary=include_boundary, tol=tol)
+        return true
+    else
+        _, R_max = get_bounding_radii(cone, bv)
+
+        # If the whole BV is behind the cone vertex, it cannot intersect the cone.
+        if include_boundary
+            R_max < -tol && return false
+        else
+            R_max <= tol && return false
+        end
+
+        alpha_min = get_alpha(bv, cone.vertex, cone.axis; is_max=false)
+        if include_boundary
+            return alpha_min <= cone.slope + tol
+        else
+            return alpha_min < cone.slope - tol
+        end
+    end
+end
