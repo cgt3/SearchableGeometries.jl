@@ -497,3 +497,34 @@ function intersects(bv::BoundingVolume, line::Line; include_boundary=true, tol::
     end
     return true
 end
+
+function get_intersection(bv::BoundingVolume, line::Line; tol::Real=DEFAULT_BV_POINT_TOL)
+    if !intersects(bv, line; include_boundary=true, tol=tol)
+        return BoundingVolume()
+    end
+    
+    s_min = 0.0
+    s_max = Inf
+
+    # Line is a point
+    if all(abs.(line.dir) .<= tol)
+        return BoundingVolume(line.source, line.source; tol=tol)
+    end
+
+    for i in eachindex(bv.lb)
+        if abs(line.dir[i]) <= tol
+            continue
+        end
+
+        s1 = (bv.lb[i] - line.source[i]) / line.dir[i]
+        s2 = (bv.ub[i] - line.source[i]) / line.dir[i]
+
+        s_min = max(s_min, min(s1, s2))
+        s_max = min(s_max, max(s1, s2))
+    end
+
+    p_min = line(s_min)
+    p_max = line(s_max)
+
+    return BoundingVolume(min.(p_min, p_max), max.(p_min, p_max); tol=tol)
+end

@@ -356,3 +356,124 @@ end
     @test intersects(bv, line; include_boundary=true)
     @test intersects(bv, line; include_boundary=false)
 end
+
+# `get_intersection(bv, line)`: ------------------------------------------------------
+@testset "get_intersection(bv, line): positive ray intersects 2D BV" begin
+    bv = BoundingVolume([0.0, 0.0], [2.0, 2.0])
+    line = Line([-1.0, 1.0], [1.0, 0.0]; normalize=false)
+
+    intersection = get_intersection(bv, line)
+
+    @test !intersection.is_empty
+    @test isapprox(intersection.lb, [0.0, 1.0]; atol=1e-6)
+    @test isapprox(intersection.ub, [2.0, 1.0]; atol=1e-6)
+end
+
+@testset "get_intersection(bv, line): positive ray points away from BV" begin
+    bv = BoundingVolume([0.0, 0.0], [2.0, 2.0])
+    line = Line([3.0, 1.0], [1.0, 0.0]; normalize=false)
+
+    intersection = get_intersection(bv, line)
+    @test intersection.is_empty
+end
+
+@testset "get_intersection(bv, line): positive ray points toward BV" begin
+    bv = BoundingVolume([0.0, 0.0], [2.0, 2.0])
+    line = Line([3.0, 1.0], [-1.0, 0.0]; normalize=false)
+
+    intersection = get_intersection(bv, line)
+
+    @test !intersection.is_empty
+    @test isapprox(intersection.lb, [0.0, 1.0]; atol=1e-6)
+    @test isapprox(intersection.ub, [2.0, 1.0]; atol=1e-6)
+end
+
+@testset "get_intersection(bv, line): ray touches boundary only" begin
+    bv = BoundingVolume([0.0, 0.0], [2.0, 2.0])
+    line = Line([-1.0, 0.0], [1.0, 0.0]; normalize=false)
+
+    intersection = get_intersection(bv, line)
+
+    @test !intersection.is_empty
+    @test isapprox(intersection.lb, [0.0, 0.0]; atol=1e-6)
+    @test isapprox(intersection.ub, [2.0, 0.0]; atol=1e-6)
+end
+
+@testset "get_intersection(bv, line): ray starts on boundary and enters BV" begin
+    bv = BoundingVolume([0.0, 0.0], [2.0, 2.0])
+    line = Line([0.0, 1.0], [1.0, 0.0]; normalize=false)
+
+    intersection = get_intersection(bv, line)
+
+    @test !intersection.is_empty
+    @test isapprox(intersection.lb, [0.0, 1.0]; atol=1e-6)
+    @test isapprox(intersection.ub, [2.0, 1.0]; atol=1e-6)
+end
+
+@testset "get_intersection(bv, line): ray starts inside BV" begin
+    bv = BoundingVolume([0.0, 0.0], [2.0, 2.0])
+    line = Line([1.0, 1.0], [1.0, 0.0]; normalize=false)
+
+    intersection = get_intersection(bv, line)
+
+    @test !intersection.is_empty
+    @test isapprox(intersection.lb, [1.0, 1.0]; atol=1e-6)
+    @test isapprox(intersection.ub, [2.0, 1.0]; atol=1e-6)
+end
+
+@testset "get_intersection(bv, line): ray misses BV because parallel outside slab" begin
+    bv = BoundingVolume([0.0, 0.0], [2.0, 2.0])
+    line = Line([-1.0, 3.0], [1.0, 0.0]; normalize=false)
+
+    intersection = get_intersection(bv, line)
+    @test intersection.is_empty
+end
+
+@testset "get_intersection(bv, line): point-line inside BV" begin
+    bv = BoundingVolume([0.0, 0.0], [2.0, 2.0])
+    line = Line([1.0, 1.0], [0.0, 0.0]; normalize=false)
+
+    intersection = get_intersection(bv, line)
+
+    @test !intersection.is_empty
+    @test isapprox(intersection.lb, [1.0, 1.0]; atol=1e-6)
+    @test isapprox(intersection.ub, [1.0, 1.0]; atol=1e-6)
+end
+
+@testset "get_intersection(bv, line): point-line on boundary" begin
+    bv = BoundingVolume([0.0, 0.0], [2.0, 2.0])
+    line = Line([0.0, 1.0], [0.0, 0.0]; normalize=false)
+
+    intersection = get_intersection(bv, line)
+
+    @test !intersection.is_empty
+    @test isapprox(intersection.lb, [0.0, 1.0]; atol=1e-6)
+    @test isapprox(intersection.ub, [0.0, 1.0]; atol=1e-6)
+
+end
+
+@testset "get_intersection(bv, line): point-line outside BV" begin
+    bv = BoundingVolume([0.0, 0.0], [2.0, 2.0])
+    line = Line([3.0, 1.0], [0.0, 0.0]; normalize=false)
+
+    intersection = get_intersection(bv, line)
+    @test intersection.is_empty
+end
+
+@testset "get_intersection(bv, line): 3D ray intersects BV" begin
+    bv = BoundingVolume([0.0, 0.0, 0.0], [2.0, 2.0, 2.0])
+    line = Line([-1.0, 1.0, 1.0], [1.0, 0.0, 0.0]; normalize=false)
+
+    intersection = get_intersection(bv, line)
+
+    @test !intersection.is_empty
+    @test isapprox(intersection.lb, [0.0, 1.0, 1.0]; atol=1e-6)
+    @test isapprox(intersection.ub, [2.0, 1.0, 1.0]; atol=1e-6)
+end
+
+@testset "get_intersection(bv, line): dimension mismatch throws" begin
+    bv = BoundingVolume([0.0, 0.0], [2.0, 2.0])
+    line = Line([0.0, 0.0, 0.0], [1.0, 0.0, 0.0]; normalize=false)
+
+    @test_throws "SearchableGeometries.GeometricPrimitives.Line: bounding volume dimension(2) does not match line dimension(3)" get_intersection(bv, line)
+end
