@@ -14,7 +14,7 @@ using SafeTestsets
         include("GeometricPrimitives/Cone_test.jl")
     end
 
-    # @safetests "kdTrees:" begin
-    #     include("kdTrees/kdTrees_test.jl")
-    # end
+    @safetestset "kdTrees:" begin
+        include("kdTrees/kd_trees_test.jl")
+    end
 end

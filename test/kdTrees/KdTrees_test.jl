@@ -1,3 +1,0 @@
-using SearchableGeometries
-
-# Constructors
