@@ -3,7 +3,7 @@ using SearchableGeometries.GeometricPrimitives: BoundingVolume
 using SearchableGeometries: 
     partition_data!,
     partition_bv,
-    is_base_case
+    is_leaf
 
 # PointRange Constructors ----------------------------------------------------
 @testset "Constructing PointRange: Valid" begin
@@ -18,7 +18,7 @@ using SearchableGeometries:
     @test r.last == 4
     @test r.n == 4
     @test length(r) == 4
-    @test !isempty(r)
+    @test isvalid(r)
 
     r2 = PointRange(data, 2, 3)
     @test r2.first == 2
@@ -35,7 +35,7 @@ end
 
     r = PointRange(data, 3, 2)
     @test r.n == 0
-    @test isempty(r)
+    @test !isvalid(r)
 
     @test_throws "SearchableGeometries.PointRange: n must be nonnegative" PointRange(data, 3; n = -1)
     @test_throws "SearchableGeometries.PointRange: last must be at least first - 1" PointRange(data, 3, 1)
@@ -61,35 +61,8 @@ end
     @test bv_sub.ub == [4.0, 3.0]
 end
 
-# `get_split` ----------------------------------------------------------------
-@testset "get_split(node): Matrix PointRange" begin
-    data = [
-        0.0  1.0  4.0  5.0;
-        0.0  2.0  3.0  1.0
-    ]
-
-    r = PointRange(data, 1; n = 4)
-    bv = BoundingVolume(r)
-
-    node = Node(
-        r,
-        bv,
-        Watertight;
-        is_base_case = (val, bv, parent) -> true,
-        get_split = get_split,
-        partition_data! = partition_data!,
-        partition_bv = partition_bv,
-    )
-
-    # Because the node was made a leaf immediately, manually test get_split
-    split_dim, split_val = get_split(node)
-
-    @test split_dim == 1
-    @test isapprox(split_val, 2.5; atol=1e-6)
-end
-
 # `partition_data!` ----------------------------------------------------------
-@testset "partition_data!(node): Matrix PointRange" begin
+@testset "partition_data!(node): PointRange" begin
     data = [
         0.0  5.0  1.0  4.0;
         0.0  1.0  2.0  3.0
@@ -102,16 +75,18 @@ end
         r,
         bv,
         Watertight;
-        is_base_case = (val, bv, parent) -> true,
-        get_split = get_split,
+        is_leaf = (val) -> true,
         partition_data! = partition_data!,
         partition_bv = partition_bv,
     )
 
-    node.split_dim = 1
-    node.split_val = 2.5
+    node.split_dim, node.split_val, val_L, val_R = partition_data!(node)
 
-    val_L, val_R = partition_data!(node)
+    @test node.split_dim == 1
+    @test node.split_val == 2.5
+
+    @test val_L == PointRange(data, 1, 2)
+    @test val_R == PointRange(data, 3, 4)
 
     @test val_L.first == 1
     @test val_R.last == 4
@@ -140,17 +115,12 @@ end
         r,
         bv,
         Watertight;
-        is_base_case = (val, bv, parent) -> true,
-        get_split = get_split,
+        is_leaf = (val) -> true,
         partition_data! = partition_data!,
         partition_bv = partition_bv,
     )
 
-    node.split_dim = 1
-    node.split_val = 2.5
-
-    val_L = PointRange(data, 1, 2)
-    val_R = PointRange(data, 3, 4)
+    node.split_dim, node.split_val, val_L, val_R = partition_data!(node)
 
     bv_L, bv_R = partition_bv(node, val_L, val_R)
 
@@ -174,14 +144,12 @@ end
         r,
         bv,
         Arbitrary;
-        is_base_case = (val, bv, parent) -> true,
-        get_split = get_split,
+        is_leaf = (val) -> true,
         partition_data! = partition_data!,
         partition_bv = partition_bv,
     )
 
-    val_L = PointRange(data, 1, 2)
-    val_R = PointRange(data, 3, 4)
+    node.split_dim, node.split_val, val_L, val_R = partition_data!(node)
 
     bv_L, bv_R = partition_bv(node, val_L, val_R)
 
@@ -206,8 +174,7 @@ end
         r,
         bv,
         Watertight;
-        is_base_case = (val, bv, parent) -> val.n <= 1,
-        get_split = get_split,
+        is_leaf = (val) -> val.n <= 1,
         partition_data! = partition_data!,
         partition_bv = partition_bv,
     )
@@ -265,8 +232,7 @@ end
         r,
         bv,
         Arbitrary;
-        is_base_case = (val, bv, parent) -> val.n <= 1,
-        get_split = get_split,
+        is_leaf = (val) -> val.n <= 1,
         partition_data! = partition_data!,
         partition_bv = partition_bv,
     )

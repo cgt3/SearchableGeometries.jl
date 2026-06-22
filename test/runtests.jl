@@ -13,7 +13,6 @@ using SafeTestsets
     @safetestset "Cones:" begin
         include("GeometricPrimitives/Cone_test.jl")
     end
-
     @safetestset "kdTrees:" begin
         include("kdTrees/kd_trees_test.jl")
     end
