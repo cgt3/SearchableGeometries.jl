@@ -1,7 +1,9 @@
 using SearchableGeometries.GeometricPrimitives
 using SearchableGeometries.GeometricPrimitives: 
     face_index_to_spatial_index,
-    get_face_bounding_volume
+    get_face_bounding_volume,
+    get_closest_point,
+    get_furthest_point
 
 # Constructing BVs: ------------------------------------------------------
 @testset "Constructing BVs: Invalid bounds" begin

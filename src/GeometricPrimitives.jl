@@ -7,8 +7,7 @@ import Base: ==, getindex
 export SearchableGeometry, BoundingVolume, Ball, Hyperplane, Line, Cone
 
 # General functions
-export is_contained, intersects, get_intersection, get_closest_point, get_furthest_point
-
+export is_contained, intersects, get_intersection
 const DEFAULT_BV_POINT_TOL = 1e-15
 
 """

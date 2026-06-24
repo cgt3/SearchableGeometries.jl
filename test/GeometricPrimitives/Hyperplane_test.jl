@@ -1,4 +1,7 @@
 using SearchableGeometries.GeometricPrimitives
+using SearchableGeometries.GeometricPrimitives:
+    get_closest_point,
+    get_furthest_point
 using LinearAlgebra: norm, dot
 
 # Hyperplane constructors --------------------------------------------------------
