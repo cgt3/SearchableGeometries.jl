@@ -76,8 +76,7 @@ end
         bv,
         Watertight;
         is_leaf = (val) -> true,
-        partition_data! = partition_data!,
-        partition_bv = partition_bv,
+        partition_data! = partition_data!
     )
 
     node.split_dim, node.split_val, val_L, val_R = partition_data!(node)
@@ -116,8 +115,7 @@ end
         bv,
         Watertight;
         is_leaf = (val) -> true,
-        partition_data! = partition_data!,
-        partition_bv = partition_bv,
+        partition_data! = partition_data!
     )
 
     node.split_dim, node.split_val, val_L, val_R = partition_data!(node)
@@ -175,8 +173,7 @@ end
         bv,
         Watertight;
         is_leaf = (val) -> val.n <= 1,
-        partition_data! = partition_data!,
-        partition_bv = partition_bv,
+        partition_data! = partition_data!
     )
 
     @test root.parent === nothing

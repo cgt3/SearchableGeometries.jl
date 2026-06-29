@@ -201,7 +201,7 @@ end
 end
 
 @testset "is_contained(BV, Ball): Boundary Ball" begin
-    bv = BoundingVolume([0, 0], [1, 1])
+    bv = BoundingVolume([0.0, 0.0], [1.0, 1.0])
     # Ball centered at [0.5, 0.5] with radius 0.5 has bounds [0.0, 0.0], [1.0, 1.0].
     # This ball "meets the boundary" everywhere.
     ball_p1 = Ball([0.5, 0.5], 0.5, p=1)
@@ -220,9 +220,9 @@ end
 @testset "is_contained(BV, Ball): Partial Overlap Ball" begin
     bv = BoundingVolume([0, 0], [1, 1])
     # Ball centered at [1, 0.5] with radius 0.5 has bounds [0.5, 0], [1.5, 1].
-    ball_p1 = Ball([1, 0.5], 0.5, p=1)
-    ball_p2 = Ball([1, 0.5], 0.5, p=2)
-    ball_pInf = Ball([1, 0.5], 0.5, p=Inf)
+    ball_p1 = Ball([1.0, 0.5], 0.5, p=1)
+    ball_p2 = Ball([1.0, 0.5], 0.5, p=2)
+    ball_pInf = Ball([1.0, 0.5], 0.5, p=Inf)
 
     @test !is_contained(bv, ball_p1, include_boundary=true)
     @test !is_contained(bv, ball_p2, include_boundary=true)
@@ -291,7 +291,7 @@ end
     ball_pInf = Ball([0.0, 0.0], 1.0, p=Inf)
 
     # BV with furthest point from centre of ball being [1.2, 1.2]
-    bv = BoundingVolume([0, 0], [1.2, 1.2])
+    bv = BoundingVolume([0.0, 0.0], [1.2, 1.2])
 
     @test !is_contained(ball_p1, bv, include_boundary=true)
     @test !is_contained(ball_p2, bv, include_boundary=true)

@@ -136,7 +136,7 @@ end
 
 @testset "is_contained(BV, BV): Partial Intersection" begin
     bv = BoundingVolume([0, 0], [1, 1])
-    bv_query = BoundingVolume([-1, -1], [0.5, 0.5])
+    bv_query = BoundingVolume([-1.0, -1.0], [0.5, 0.5])
 
     # Full-dim intersection
     @test is_contained(bv, bv_query, include_boundary=true) == false
@@ -158,7 +158,7 @@ end
 
 @testset "is_contained(BV, BV): Strictly/Fully Contained" begin
     bv = BoundingVolume([0, 0], [1, 1])
-    bv_query = BoundingVolume([0.25, 0.25], [1, 1])
+    bv_query = BoundingVolume([0.25, 0.25], [1.0, 1.0])
 
     @test is_contained(bv, bv_query, include_boundary=true) == true
     @test is_contained(bv, bv_query, include_boundary=false) == false
@@ -222,8 +222,8 @@ end
     interior_intersection = get_intersection(bv, bv_interior)
     @test interior_intersection == bv_interior
 
-    bv_overlapping = BoundingVolume([-1, -1], [0.25, 0.5])
-    intersection_true = BoundingVolume([0, 0], [0.25, 0.5])
+    bv_overlapping = BoundingVolume([-1.0, -1.0], [0.25, 0.5])
+    intersection_true = BoundingVolume([0.0, 0.0], [0.25, 0.5])
     intersection = get_intersection(bv, bv_overlapping)
     @test intersection == intersection_true
 end
