@@ -326,3 +326,54 @@ function partition_bv(
 
     return BoundingVolume(lb_L, ub_L), BoundingVolume(lb_R, ub_R)
 end
+
+struct Tree{T_v, T_BVH, T_d}
+    root::Node{T_v, T_BVH, T_d}
+
+    function Tree{T_v, T_BVH, T_d}(val::T_v) where {T_v, T_BVH<:BVH, T_d<:Real}
+        
+        bv = BoundingVolume(val)
+        
+        root = Node{T_v, T_BVH, T_d}(val, bv)
+
+        return new{T_v, T_BVH, T_d}(root)
+    end
+end
+
+function tree_map_preorder(node::Node{T_v, T_BVH, T_d}, func::Function; left_first::Bool=true) where {T_v, T_BVH<:BVH, T_d<:Real}
+    
+    first_child, second_child = left_first ? (node.left, node.right) : (node.right, node.left)
+
+    # If this is a leaf, there are no children to visit.
+    if node.is_leaf
+        return nothing
+    end
+
+    if left_first
+        tree_map_preorder(node.left, func; left_first=left_first)
+        tree_map_preorder(node.right, func; left_first=left_first)
+    else
+        tree_map_preorder(node.right, func; left_first=left_first)
+        tree_map_preorder(node.left, func; left_first=left_first)
+    end
+
+    return nothing
+end
+
+function leaf_search(node::Node{T_v, T_BVH, T_d}, func::Function) where {T_v, T_BVH<:BVH, T_d<:Real}
+    # If func is false, prune the whole subtree
+    if !func(node)
+        return Node{T_v, T_BVH, T_d}[]
+    end
+
+    # If the node passes the test and is a leaf, return it
+    if node.is_leaf
+        return Node{T_v, T_BVH, T_d}[node]
+    end
+
+    # Otherwise recurse on children
+    nodes_L = leaf_search(node.left, func)
+    nodes_R = leaf_search(node.right, func)
+
+    return vcat(nodes_L, nodes_R)
+end
