@@ -71,7 +71,7 @@ end
     r = PointRange(data, 1; n = 4)
     bv = BoundingVolume(r)
 
-    node = Node(
+    node = kdTreeNode(
         r,
         bv,
         Watertight;
@@ -110,7 +110,7 @@ end
     r = PointRange(data, 1; n = 4)
     bv = BoundingVolume(r)
 
-    node = Node(
+    node = kdTreeNode(
         r,
         bv,
         Watertight;
@@ -138,7 +138,7 @@ end
     r = PointRange(data, 1; n = 4)
     bv = BoundingVolume(r)
 
-    node = Node(
+    node = kdTreeNode(
         r,
         bv,
         Arbitrary;
@@ -158,8 +158,8 @@ end
     @test bv_R.ub == [5.0, 3.0]
 end
 
-# Node constructor --------------------------------------------------
-@testset "Recursive Node construction with Watertight BVH" begin
+# kdTreeNode constructor --------------------------------------------------
+@testset "Recursive kdTreeNode construction with Watertight BVH" begin
     data = [
         0.0  1.0  4.0  5.0;
         0.0  2.0  3.0  1.0
@@ -168,7 +168,7 @@ end
     r = PointRange(data, 1; n = 4)
     bv = BoundingVolume(r)
 
-    root = Node(
+    root = kdTreeNode(
         r,
         bv,
         Watertight;
@@ -216,7 +216,7 @@ end
     @test root.right.right.val.n == 1
 end
 
-@testset "Recursive Node construction with Arbitrary BVH" begin
+@testset "Recursive kdTreeNode construction with Arbitrary BVH" begin
     data = [
         0.0  1.0  4.0  5.0;
         0.0  2.0  3.0  1.0
@@ -225,7 +225,7 @@ end
     r = PointRange(data, 1; n = 4)
     bv = BoundingVolume(r)
 
-    root = Node(
+    root = kdTreeNode(
         r,
         bv,
         Arbitrary;
@@ -279,4 +279,235 @@ end
     @test root.left.right.val.n == 1
     @test root.right.left.val.n == 1
     @test root.right.right.val.n == 1
+end
+
+# leaf_search with one function -------------------------------------------
+@testset "leaf_search(node, func)" begin
+    data = [
+        -4.0  -3.0  -4.0  -3.0   3.0   4.0   3.0   4.0;
+        -4.0  -4.0  -3.0  -3.0   3.0   3.0   4.0   4.0
+    ]
+
+    r = PointRange(data, 1; n = 8)
+    bv = BoundingVolume(r)
+
+    root = kdTreeNode(
+        r,
+        bv,
+        Arbitrary;
+        is_leaf = val -> val.n <= 1,
+        partition_data! = partition_data!,
+        partition_bv = partition_bv,
+    )
+
+    @testset "returns all leaves when func is always true" begin
+        leaves = leaf_search(root, node -> true)
+
+        @test length(leaves) == 8
+        @test all(node -> node.is_leaf, leaves)
+        @test all(node -> node.val.n == 1, leaves)
+    end
+
+    @testset "returns empty when root fails func" begin
+        leaves = leaf_search(root, node -> false)
+
+        @test isempty(leaves)
+    end
+
+    @testset "prunes left subtree" begin
+        leaves = leaf_search(root, node -> node === root)
+
+        # Root is internal, so it is not returned.
+        # Its children fail, so no leaves are reached.
+        @test isempty(leaves)
+    end
+
+    @testset "does not return leaves that fail func" begin
+        leaves = leaf_search(root, node -> !node.is_leaf)
+
+        # Internal nodes may pass, but leaves fail,
+        # so no leaf should be returned.
+        @test isempty(leaves)
+    end
+end
+
+# leaf_search with two functions ----------------------------------------
+@testset "leaf_search(node, internal_func, leaf_func)" begin
+    data = [
+        -4.0  -3.0  -4.0  -3.0   3.0   4.0   3.0   4.0;
+        -4.0  -4.0  -3.0  -3.0   3.0   3.0   4.0   4.0
+    ]
+
+    r = PointRange(data, 1; n = 8)
+    bv = BoundingVolume(r)
+
+    root = kdTreeNode(
+        r,
+        bv,
+        Arbitrary;
+        is_leaf = val -> val.n <= 1,
+        partition_data! = partition_data!,
+        partition_bv = partition_bv,
+    )    
+
+    @testset "returns all leaves when both functions allow search" begin
+        leaves = leaf_search(root, node -> true, node -> true)
+
+        @test length(leaves) == 8
+        @test all(node -> node.is_leaf, leaves)
+        @test all(node -> node.val.n == 1, leaves)
+    end
+
+    @testset "leaf_func controls returned leaves" begin
+        leaves = leaf_search(
+            root,
+            node -> true,
+            node -> false,
+        )
+
+        @test isempty(leaves)
+    end
+
+    @testset "internal_func controls pruning" begin
+        leaves = leaf_search(
+            root,
+            node -> node === root,
+            node -> true,
+        )
+
+        # Root passes, but its children are internal and fail.
+        # Therefore we never reach the leaves.
+        @test isempty(leaves)
+    end
+
+    @testset "internal_func is not applied to leaves" begin
+        internal_count = 0
+        leaf_count = 0
+
+        leaves = leaf_search(
+            root,
+            node -> begin
+                internal_count += 1
+                return true
+            end,
+            node -> begin
+                leaf_count += 1
+                return true
+            end,
+        )
+
+        @test length(leaves) == 8
+        @test internal_count == 7
+        @test leaf_count == 8
+    end
+end
+
+# search ------------------------------------------------------------
+@testset "search(node, func; shortcircuit=false)" begin
+    data = [
+        -4.0  -3.0  -4.0  -3.0   3.0   4.0   3.0   4.0;
+        -4.0  -4.0  -3.0  -3.0   3.0   3.0   4.0   4.0
+    ]
+
+    r = PointRange(data, 1; n = 8)
+    bv = BoundingVolume(r)
+
+    root = kdTreeNode(
+        r,
+        bv,
+        Arbitrary;
+        is_leaf = val -> val.n <= 1,
+        partition_data! = partition_data!,
+        partition_bv = partition_bv,
+    )  
+
+    @testset "returns all nodes when func is always true" begin
+        nodes = search(root, node -> true)
+
+        @test length(nodes) == 15
+        @test nodes[1] === root
+        @test count(node -> node.is_leaf, nodes) == 8
+        @test count(node -> !node.is_leaf, nodes) == 7
+    end
+
+    @testset "returns only leaves when func checks node.is_leaf" begin
+        nodes = search(root, node -> node.is_leaf)
+
+        @test length(nodes) == 8
+        @test all(node -> node.is_leaf, nodes)
+        @test all(node -> node.val.n == 1, nodes)
+    end
+
+    @testset "returns only internal nodes when func checks !node.is_leaf" begin
+        nodes = search(root, node -> !node.is_leaf)
+
+        @test length(nodes) == 7
+        @test all(node -> !node.is_leaf, nodes)
+    end
+
+    @testset "shortcircuit=false still searches children when root fails" begin
+        nodes = search(
+            root,
+            node -> node !== root;
+            shortcircuit = false,
+        )
+
+        # Root fails and is not returned,
+        # but all descendants are still searched.
+        @test length(nodes) == 14
+        @test !(root in nodes)
+    end
+
+    @testset "shortcircuit=true prunes when root fails" begin
+        nodes = search(
+            root,
+            node -> node !== root;
+            shortcircuit = true,
+        )
+
+        # Root fails, so the entire tree is pruned.
+        @test isempty(nodes)
+    end
+
+    @testset "shortcircuit=true prunes failed left subtree" begin
+        failed_node = root.left
+
+        nodes = search(
+            root,
+            node -> node !== failed_node;
+            shortcircuit = true,
+        )
+
+        # Root passes.
+        # root.left fails, so its whole subtree is skipped.
+        # root.right subtree has 7 nodes.
+        # Total returned = root + right subtree = 8.
+        @test length(nodes) == 8
+        @test root in nodes
+        @test !(failed_node in nodes)
+        @test all(node -> node !== failed_node, nodes)
+    end
+
+    @testset "shortcircuit=false does not prune failed left subtree" begin
+        failed_node = root.left
+
+        nodes = search(
+            root,
+            node -> node !== failed_node;
+            shortcircuit = false,
+        )
+
+        # failed_node is not returned,
+        # but its descendants are still searched.
+        # Total nodes = 15 - 1 = 14.
+        @test length(nodes) == 14
+        @test root in nodes
+        @test !(failed_node in nodes)
+    end
+
+    @testset "preorder means root is returned first" begin
+        nodes = search(root, node -> true)
+
+        @test nodes[1] === root
+    end
 end

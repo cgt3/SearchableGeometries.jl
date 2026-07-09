@@ -7,10 +7,10 @@ const DEFAULT_PT_TOL = 1e-12
 export DEFAULT_NUM_LEAF_PTS
 
 # Data types
-export PointRange, Node, Watertight, Arbitrary
+export PointRange, kdTreeNode, Watertight, Arbitrary
 
 # Functions
-export get_split, partition_data!, partition_bv
+export get_split, partition_data!, partition_bv, leaf_search, search
 
 struct PointRange{T_data, dim}
     data::Matrix{T_data}
@@ -49,14 +49,18 @@ Base.length(r::PointRange) = r.n
 Base.isvalid(r::PointRange) = r.n > 0
 
 abstract type BVH end
+abstract type TraversalOrder end
 
 struct Watertight <: BVH end
 struct Arbitrary <: BVH end
+struct Preorder <: TraversalOrder end
+struct Inorder <: TraversalOrder end
+struct Postorder <: TraversalOrder end
 
-mutable struct Node{T_v, T_BVH, T_d}
-	parent::Union{Node{T_v, T_BVH, T_d}, Nothing}
-	left::Union{Node{T_v, T_BVH, T_d}, Nothing}
-    right::Union{Node{T_v, T_BVH, T_d}, Nothing}
+mutable struct kdTreeNode{T_v, T_BVH, T_d}
+	parent::Union{kdTreeNode{T_v, T_BVH, T_d}, Nothing}
+	left::Union{kdTreeNode{T_v, T_BVH, T_d}, Nothing}
+    right::Union{kdTreeNode{T_v, T_BVH, T_d}, Nothing}
     split_dim::Int
     split_val::T_d
     is_leaf::Bool
@@ -64,13 +68,13 @@ mutable struct Node{T_v, T_BVH, T_d}
     bv::BoundingVolume
     # depth::Integer
 
-    function Node{T_v, T_BVH, T_d}(
+    function kdTreeNode{T_v, T_BVH, T_d}(
         val::T_v,
         bv::BoundingVolume;
         is_leaf::Function,
         partition_data!::Function,
         partition_bv::Function,
-        parent::Union{Node{T_v, T_BVH, T_d}, Nothing}=nothing
+        parent::Union{kdTreeNode{T_v, T_BVH, T_d}, Nothing}=nothing
     ) where {T_v, T_BVH<:BVH, T_d<:Real}
         
         # Create current internal node
@@ -108,7 +112,7 @@ mutable struct Node{T_v, T_BVH, T_d}
 
         # Build left child only if valid
         if is_valid_L
-            node.left = Node{T_v, T_BVH, T_d}(
+            node.left = kdTreeNode{T_v, T_BVH, T_d}(
                 val_L,
                 bv_L;
                 is_leaf = is_leaf,
@@ -120,7 +124,7 @@ mutable struct Node{T_v, T_BVH, T_d}
         
         # Build right child only if valid
         if is_valid_R
-            node.right = Node{T_v, T_BVH, T_d}(
+            node.right = kdTreeNode{T_v, T_BVH, T_d}(
                 val_R,
                 bv_R;
                 is_leaf = is_leaf,
@@ -134,19 +138,19 @@ mutable struct Node{T_v, T_BVH, T_d}
     end
 end
 
-function Node(
+function kdTreeNode(
     val::PointRange,
     bv::BoundingVolume,
     ::Type{Arbitrary};
     is_leaf = is_leaf,
     partition_data! = partition_data!,
     partition_bv = partition_bv,
-    parent::Union{Node{PointRange, Arbitrary, T_d}, Nothing}=nothing
+    parent::Union{kdTreeNode{PointRange, Arbitrary, T_d}, Nothing}=nothing
 ) where {T_d<:Real}
 
     T = eltype(bv.lb)
 
-    return Node{PointRange, Arbitrary, T}(
+    return kdTreeNode{PointRange, Arbitrary, T}(
         val,
         bv;
         is_leaf,
@@ -156,18 +160,18 @@ function Node(
     )
 end
 
-function Node(
+function kdTreeNode(
     val::PointRange,
     bv::BoundingVolume,
     ::Type{Watertight};
     is_leaf = is_leaf,
     partition_data! = partition_data!,
-    parent::Union{Node{PointRange, Watertight, T_d}, Nothing}=nothing
+    parent::Union{kdTreeNode{PointRange, Watertight, T_d}, Nothing}=nothing
 ) where {T_d<:Real}
     
     T = eltype(bv.lb)
 
-    return Node{PointRange, Watertight, T}(
+    return kdTreeNode{PointRange, Watertight, T}(
         val,
         bv;
         is_leaf = is_leaf,
@@ -187,7 +191,12 @@ function is_leaf(val::PointRange; leafsize::Int=DEFAULT_NUM_LEAF_PTS)
     return false
 end
 
-function partition_data!(node::Node{PointRange, T_BVH, T_d}; tie_tol::Real=DEFAULT_PT_TOL) where {T_BVH<:BVH, T_d<:Real}
+@inline function get_counts(data, split_dim, split_val)
+    n_left = sum(data[split_dim, :] .<= split_val)
+    return n_left, size(data, 2) - n_left
+end
+
+function partition_data!(node::kdTreeNode{PointRange, T_BVH, T_d}; tie_tol::Real=DEFAULT_PT_TOL) where {T_BVH<:BVH, T_d<:Real}
     val = node.val
     data = val.data
 
@@ -230,15 +239,7 @@ function partition_data!(node::Node{PointRange, T_BVH, T_d}; tie_tol::Real=DEFAU
         split_dim = tied_dims[d]
         split_val = centroid[split_dim]
 
-        n_left = 0
-
-        @inbounds for i in lo:hi
-            if data[split_dim, i] <= split_val
-                n_left += 1
-            end
-        end
-        
-        n_right = n - n_left
+        n_left, n_right = get_counts(data[:, lo:hi], split_dim, split_val)
         
         n_rights[d] = n_right
         n_lefts[d] = n_left
@@ -302,7 +303,7 @@ function BoundingVolume(point_range::PointRange{T, D}) where {T<:Real, D}
 end
 
 function partition_bv(
-    node::Node{PointRange, Arbitrary, T_d},
+    node::kdTreeNode{PointRange, Arbitrary, T_d},
     val_L::PointRange,
     val_R::PointRange
 ) where {T_d<:Real}
@@ -311,7 +312,7 @@ function partition_bv(
 end
 
 function partition_bv(
-    node::Node{PointRange, Watertight, T_d},
+    node::kdTreeNode{PointRange, Watertight, T_d},
     val_L::PointRange,
     val_R::PointRange
 ) where {T_d<:Real}
@@ -327,48 +328,15 @@ function partition_bv(
     return BoundingVolume(lb_L, ub_L), BoundingVolume(lb_R, ub_R)
 end
 
-struct Tree{T_v, T_BVH, T_d}
-    root::Node{T_v, T_BVH, T_d}
-
-    function Tree{T_v, T_BVH, T_d}(val::T_v) where {T_v, T_BVH<:BVH, T_d<:Real}
-        
-        bv = BoundingVolume(val)
-        
-        root = Node{T_v, T_BVH, T_d}(val, bv)
-
-        return new{T_v, T_BVH, T_d}(root)
-    end
-end
-
-function tree_map_preorder(node::Node{T_v, T_BVH, T_d}, func::Function; left_first::Bool=true) where {T_v, T_BVH<:BVH, T_d<:Real}
-    
-    first_child, second_child = left_first ? (node.left, node.right) : (node.right, node.left)
-
-    # If this is a leaf, there are no children to visit.
-    if node.is_leaf
-        return nothing
-    end
-
-    if left_first
-        tree_map_preorder(node.left, func; left_first=left_first)
-        tree_map_preorder(node.right, func; left_first=left_first)
-    else
-        tree_map_preorder(node.right, func; left_first=left_first)
-        tree_map_preorder(node.left, func; left_first=left_first)
-    end
-
-    return nothing
-end
-
-function leaf_search(node::Node{T_v, T_BVH, T_d}, func::Function) where {T_v, T_BVH<:BVH, T_d<:Real}
-    # If func is false, prune the whole subtree
+function leaf_search(node::kdTreeNode{T_v, T_BVH, T_d}, func::F) where {T_v, T_BVH<:BVH, T_d<:Real, F}
+    # Preorder check: if false, prune the whole subtree
     if !func(node)
-        return Node{T_v, T_BVH, T_d}[]
+        return kdTreeNode{T_v, T_BVH, T_d}[]
     end
 
-    # If the node passes the test and is a leaf, return it
+    # If this node passes and is a leaf, return it
     if node.is_leaf
-        return Node{T_v, T_BVH, T_d}[node]
+        return kdTreeNode{T_v, T_BVH, T_d}[node]
     end
 
     # Otherwise recurse on children
@@ -376,4 +344,50 @@ function leaf_search(node::Node{T_v, T_BVH, T_d}, func::Function) where {T_v, T_
     nodes_R = leaf_search(node.right, func)
 
     return vcat(nodes_L, nodes_R)
+end
+
+function leaf_search(node::kdTreeNode{T_v, T_BVH, T_d}, internal_func::F_internal, leaf_func::F_leaf,) where {T_v, T_BVH<:BVH, T_d<:Real, F_internal, F_leaf}
+    # If this is a leaf, decide whether to return it
+    if node.is_leaf
+        if leaf_func(node)
+            return kdTreeNode{T_v, T_BVH, T_d}[node]
+        else
+            return kdTreeNode{T_v, T_BVH, T_d}[]
+        end
+    end
+
+    # Preorder check on internal node.
+    # If false, prune the whole subtree.
+    if !internal_func(node)
+        return kdTreeNode{T_v, T_BVH, T_d}[]
+    end
+
+    # Recurse on children
+    nodes_L = leaf_search(node.left, internal_func, leaf_func)
+    nodes_R = leaf_search(node.right, internal_func, leaf_func)
+
+    return vcat(nodes_L, nodes_R)
+end
+
+function search(node::kdTreeNode{T_v, T_BVH, T_d}, func::F; shortcircuit::Bool=false) where {T_v, T_BVH<:BVH, T_d<:Real, F}
+
+    nodes = kdTreeNode{T_v, T_BVH, T_d}[]
+
+    # Preorder: process current node first
+    if func(node)
+        push!(nodes, node)
+    elseif shortcircuit
+        return nodes
+    end
+
+    # If leaf, there are no children to search
+    if node.is_leaf
+        return nodes
+    end
+
+    # Otherwise recurse on children
+    append!(nodes, search(node.left, func; shortcircuit=shortcircuit))
+    append!(nodes, search(node.right, func; shortcircuit=shortcircuit))
+
+    return nodes
 end
