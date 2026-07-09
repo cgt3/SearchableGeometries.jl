@@ -7,10 +7,10 @@ const DEFAULT_PT_TOL = 1e-12
 export DEFAULT_NUM_LEAF_PTS
 
 # Data types
-export PointRange, kdTreeNode, Watertight, Arbitrary
+export PointRange, kdTreeNode, Watertight, Arbitrary, Preorder, Inorder, Postorder
 
 # Functions
-export get_split, partition_data!, partition_bv, leaf_search, search
+export get_split, partition_data!, partition_bv, leaf_search, search, tree_map
 
 struct PointRange{T_data, dim}
     data::Matrix{T_data}
@@ -340,8 +340,17 @@ function leaf_search(node::kdTreeNode{T_v, T_BVH, T_d}, func::F) where {T_v, T_B
     end
 
     # Otherwise recurse on children
-    nodes_L = leaf_search(node.left, func)
-    nodes_R = leaf_search(node.right, func)
+    if !isnothing(node.left )
+        nodes_L = leaf_search(node.left, func)
+    else
+        nodes_L = kdTreeNode{T_v, T_BVH, T_d}[]
+    end
+
+    if !isnothing(node.right)
+        nodes_R = leaf_search(node.right, func)
+    else
+        nodes_R = kdTreeNode{T_v, T_BVH, T_d}[]
+    end
 
     return vcat(nodes_L, nodes_R)
 end
@@ -363,8 +372,17 @@ function leaf_search(node::kdTreeNode{T_v, T_BVH, T_d}, internal_func::F_interna
     end
 
     # Recurse on children
-    nodes_L = leaf_search(node.left, internal_func, leaf_func)
-    nodes_R = leaf_search(node.right, internal_func, leaf_func)
+    if !isnothing(node.left )
+        nodes_L = leaf_search(node.left, internal_func, leaf_func)
+    else
+        nodes_L = kdTreeNode{T_v, T_BVH, T_d}[]
+    end
+
+    if !isnothing(node.right)
+        nodes_R = leaf_search(node.right, internal_func, leaf_func)
+    else
+        nodes_R = kdTreeNode{T_v, T_BVH, T_d}[]
+    end
 
     return vcat(nodes_L, nodes_R)
 end
@@ -386,8 +404,39 @@ function search(node::kdTreeNode{T_v, T_BVH, T_d}, func::F; shortcircuit::Bool=f
     end
 
     # Otherwise recurse on children
-    append!(nodes, search(node.left, func; shortcircuit=shortcircuit))
-    append!(nodes, search(node.right, func; shortcircuit=shortcircuit))
+    if !isnothing(node.left )
+        append!(nodes, search(node.left, func; shortcircuit=shortcircuit))
+    end
+    if !isnothing(node.right)
+        append!(nodes, search(node.right, func; shortcircuit=shortcircuit))
+    end
 
     return nodes
+end
+
+function tree_map(node::kdTreeNode{T_v, T_BVH, T_d}, func::F, ::Preorder; left_first::Bool = true) where {T_v, T_BVH<:BVH, T_d<:Real, F}
+    # Preorder: apply func to the current node first.
+    # If func returns false, do not recurse on children.
+    if !func(node)
+        return node
+    end
+
+    # If this is a leaf, there are no children to visit.
+    if node.is_leaf
+        return node
+    end
+
+    # Visit children in the requested order.
+    first_child  = left_first ? node.left  : node.right
+    second_child = left_first ? node.right : node.left
+
+    if first_child !== nothing
+        tree_map(first_child, func, Preorder(); left_first = left_first)
+    end
+
+    if second_child !== nothing
+        tree_map(second_child, func, Preorder(); left_first = left_first)
+    end
+
+    return node
 end
