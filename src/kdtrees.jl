@@ -196,7 +196,11 @@ end
     return n_left, size(data, 2) - n_left
 end
 
-function partition_data!(node::kdTreeNode{PointRange, T_BVH, T_d}; tie_tol::Real=DEFAULT_PT_TOL) where {T_BVH<:BVH, T_d<:Real}
+function partition_data!(
+    node::kdTreeNode{PointRange, T_BVH, T_d}; 
+    tie_tol::Real=DEFAULT_PT_TOL
+) where {T_BVH<:BVH, T_d<:Real}
+
     val = node.val
     data = val.data
 
@@ -328,7 +332,11 @@ function partition_bv(
     return BoundingVolume(lb_L, ub_L), BoundingVolume(lb_R, ub_R)
 end
 
-function leaf_search(node::kdTreeNode{T_v, T_BVH, T_d}, func::F) where {T_v, T_BVH<:BVH, T_d<:Real, F}
+function leaf_search(
+    node::kdTreeNode{T_v, T_BVH, T_d}, 
+    func::F
+) where {T_v, T_BVH<:BVH, T_d<:Real, F}
+
     # Preorder check: if false, prune the whole subtree
     if !func(node)
         return kdTreeNode{T_v, T_BVH, T_d}[]
@@ -355,7 +363,11 @@ function leaf_search(node::kdTreeNode{T_v, T_BVH, T_d}, func::F) where {T_v, T_B
     return vcat(nodes_L, nodes_R)
 end
 
-function leaf_search(node::kdTreeNode{T_v, T_BVH, T_d}, internal_func::F_internal, leaf_func::F_leaf,) where {T_v, T_BVH<:BVH, T_d<:Real, F_internal, F_leaf}
+function leaf_search(
+    node::kdTreeNode{T_v, T_BVH, T_d}, 
+    internal_func::F_internal, leaf_func::F_leaf
+) where {T_v, T_BVH<:BVH, T_d<:Real, F_internal, F_leaf}
+
     # If this is a leaf, decide whether to return it
     if node.is_leaf
         if leaf_func(node)
@@ -387,7 +399,10 @@ function leaf_search(node::kdTreeNode{T_v, T_BVH, T_d}, internal_func::F_interna
     return vcat(nodes_L, nodes_R)
 end
 
-function search(node::kdTreeNode{T_v, T_BVH, T_d}, func::F; shortcircuit::Bool=false) where {T_v, T_BVH<:BVH, T_d<:Real, F}
+function search(
+    node::kdTreeNode{T_v, T_BVH, T_d}, 
+    func::F; shortcircuit::Bool=false
+) where {T_v, T_BVH<:BVH, T_d<:Real, F}
 
     nodes = kdTreeNode{T_v, T_BVH, T_d}[]
 
@@ -414,29 +429,101 @@ function search(node::kdTreeNode{T_v, T_BVH, T_d}, func::F; shortcircuit::Bool=f
     return nodes
 end
 
-function tree_map(node::kdTreeNode{T_v, T_BVH, T_d}, func::F, ::Preorder; left_first::Bool = true) where {T_v, T_BVH<:BVH, T_d<:Real, F}
-    # Preorder: apply func to the current node first.
-    # If func returns false, do not recurse on children.
-    if !func(node)
-        return node
+function tree_map_shortcircuit!(
+    node::kdTreeNode{T_v, T_BVH, T_d},
+    func!::F;
+    left_first::Bool = true
+) where {T_v, T_BVH<:BVH, T_d<:Real, F}
+
+    # Preorder: apply func! to current node first.
+    # If func!(node) returns false, prune the subtree.
+    # If node is a leaf, there are no children to recurse on.
+    if !func!(node) || node.is_leaf
+        return
     end
 
-    # If this is a leaf, there are no children to visit.
-    if node.is_leaf
-        return node
-    end
-
-    # Visit children in the requested order.
     first_child  = left_first ? node.left  : node.right
     second_child = left_first ? node.right : node.left
 
     if first_child !== nothing
-        tree_map(first_child, func, Preorder(); left_first = left_first)
+        tree_map_shortcircuit!(first_child, func!; left_first = left_first)
     end
 
     if second_child !== nothing
-        tree_map(second_child, func, Preorder(); left_first = left_first)
+        tree_map_shortcircuit!(second_child, func!; left_first = left_first)
     end
 
-    return node
+    return 
+end
+
+function tree_map!(
+    node::kdTreeNode{T_v, T_BVH, T_d},
+    func!::F,
+    ::Preorder;
+    left_first::Bool = true
+) where {T_v, T_BVH<:BVH, T_d<:Real, F}
+
+    # Preorder: node first, then children
+    func!(node)
+
+    first_child  = left_first ? node.left  : node.right
+    second_child = left_first ? node.right : node.left
+
+    if first_child !== nothing
+        tree_map!(first_child, func!, Preorder(); left_first = left_first)
+    end
+
+    if second_child !== nothing
+        tree_map!(second_child, func!, Preorder(); left_first = left_first)
+    end
+
+    return
+end
+
+function tree_map!(
+    node::kdTreeNode{T_v, T_BVH, T_d},
+    func!::F,
+    ::Inorder;
+    left_first::Bool = true
+) where {T_v, T_BVH<:BVH, T_d<:Real, F}
+
+    # Inorder: first child, node, second child
+    first_child  = left_first ? node.left  : node.right
+    second_child = left_first ? node.right : node.left
+
+    if first_child !== nothing
+        tree_map!(first_child, func!, Inorder(); left_first = left_first)
+    end
+
+    func!(node)
+
+    if second_child !== nothing
+        tree_map!(second_child, func!, Inorder(); left_first = left_first)
+    end
+
+    return
+end
+
+function tree_map!(
+    node::kdTreeNode{T_v, T_BVH, T_d},
+    func!::F,
+    ::Postorder;
+    left_first::Bool = true,
+) where {T_v, T_BVH<:BVH, T_d<:Real, F}
+
+    # Postorder: children first, then node
+    first_child  = left_first ? node.left  : node.right
+    second_child = left_first ? node.right : node.left
+
+    if first_child !== nothing
+        tree_map!(first_child, func!, Postorder(); left_first = left_first)
+    end
+
+    if second_child !== nothing
+        tree_map!(second_child, func!, Postorder(); left_first = left_first)
+    end
+
+    func!(node)
+
+    return
 end
