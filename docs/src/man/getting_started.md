@@ -6,7 +6,7 @@ CurrentModule = SearchableGeometries.GeometricPrimitives
 
 This page gives a quick introduction to using `SearchableGeometries.jl`.
 
-The package provides geometric objects and query functions that are useful for building searchable geometric structures. At the moment, the main focus is on the geometry layer: bounding volumes, balls, and hyperplanes.
+The package provides geometric objects and query functions that are useful for building searchable geometric structures. At the moment, the main focus is on the geometry layer: bounding volumes, balls, hyperplanes, and cones.
 
 ## Installation
 
@@ -40,6 +40,7 @@ SearchableGeometries.jl currently provides three main geometry types:
 - `BoundingVolume`: an axis-aligned box or hyperrectangle;
 - `Ball`: a ``p``-norm ball centered at a point;
 - `Hyperplane`: a flat affine surface represented by a point and a normal vector.
+- `Cones`: 
 
 These objects support common geometric queries such as containment, intersection, closest-point queries, and furthest-point queries.
 
@@ -48,7 +49,7 @@ These objects support common geometric queries such as containment, intersection
 A bounding volume is an axis-aligned region defined by lower and upper coordinate bounds.
 
 ```julia
-using SearchableGeometries
+using SearchableGeometries.GeometricPrimitives
 
 bv = BoundingVolume([0.0, 0.0], [2.0, 1.0])
 ```

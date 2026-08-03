@@ -6,8 +6,8 @@ struct Cone <: SearchableGeometry
     function Cone(vertex::Vector{<:Real}, axis::Vector{<:Real}, slope::Real)
         if length(vertex) != length(axis)
             throw("SearchableGeometries.GeometricPrimitives.Cone: Vertex and axis vector do not have the same dimensions (dim(vertex)=$(length(vertex)), dim(axis)=$(length(axis))")
-        elseif slope < zero(slope)
-            throw("SearchableGeometries.GeometricPrimitives.Cone: Cannot construct cone with negative slope.")
+        elseif slope <= zero(slope)
+            throw("SearchableGeometries.GeometricPrimitives.Cone: Cannot construct cone with non-positive  slope.")
         end
 
         axis_norm = norm(axis)
@@ -20,9 +20,9 @@ struct Cone <: SearchableGeometry
 end
 
 function Base.:(==)(cone1::Cone, cone2::Cone; tol=DEFAULT_BV_POINT_TOL::Real)
-    return all(cone1.vertex .== cone2.vertex) &&
-           all(cone1.axis .== cone2.axis) &&
-           cone1.slope == cone2.slope
+    return all(abs.(cone1.vertex .- cone2.vertex) .< tol) &&
+           all(abs.(cone1.axis .- cone2.axis) .< tol) &&
+           abs(cone1.slope - cone2.slope) < tol
 end
 
 function get_R(cone::Cone, p::Vector{<:Real})

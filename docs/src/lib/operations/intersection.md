@@ -4,7 +4,7 @@
 CurrentModule = SearchableGeometries.GeometricPrimitives
 ```
 
-Intersection asks whether two geometric objects overlap and, when possible, returns a bounding representation of their overlap.
+Intersection asks whether two geometric objects overlap and, when appropriate, returns a bounding representation of their overlap.
 
 ## Generic functions
 

@@ -22,7 +22,7 @@ For example:
 
 - when ``p = 1``, the ball is based on Manhattan distance;
 - when ``p = 2``, the ball is based on Euclidean distance;
-- when ``p = \infty``, the ball is based on maximum coordinate distance.
+- when ``p = \infty``, the ball is based on maximum coordinate distance and corresponds to a bounding volume.
 
 ## Why balls are useful for search
 
@@ -35,7 +35,7 @@ Balls can also be compared with bounding volumes. This allows search algorithms 
 ## Basic usage
 
 ```julia
-using SearchableGeometries
+using SearchableGeometries.GeometricPrimitives
 
 ball = Ball([0.0, 0.0], 1.0; p=2)
 
