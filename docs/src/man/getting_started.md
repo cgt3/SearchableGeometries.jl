@@ -35,7 +35,7 @@ Pkg.instantiate()
 
 ## Main geometric objects
 
-SearchableGeometries.jl currently provides three main geometry types:
+SearchableGeometries.jl currently provides four main geometry types:
 
 - `BoundingVolume`: an axis-aligned box or hyperrectangle;
 - `Ball`: a ``p``-norm ball centered at a point;
