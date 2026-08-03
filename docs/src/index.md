@@ -6,7 +6,11 @@ CurrentModule = SearchableGeometries.GeometricPrimitives
 
 SearchableGeometries.jl provides geometric tools for building searchable geometric structures.
 
-The long-term goal is to support spatial and graph-based search structures such as kd-trees, and bounding-volume hierarchies. The current package focuses on the geometric primitives needed to make those search routines possible.
+The package currently provides four main geometric types: 
+- [`BoundingVolume`](@ref): an axis-aligned box or hyperrectangle; 
+- [`Ball`](@ref): a region defined using a center, radius, and ``p``-norm; 
+- [`Hyperplane`](@ref): an affine surface represented by a point and normal; 
+- [`Cone`](@ref): a one-sided region represented by a vertex, axis, and slope.
 
 ## Introduction
 

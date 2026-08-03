@@ -40,7 +40,7 @@ SearchableGeometries.jl currently provides three main geometry types:
 - `BoundingVolume`: an axis-aligned box or hyperrectangle;
 - `Ball`: a ``p``-norm ball centered at a point;
 - `Hyperplane`: a flat affine surface represented by a point and a normal vector.
-- `Cones`: 
+- `Cones`: a one-sided region represented by a vertex, axis, and slope.
 
 These objects support common geometric queries such as containment, intersection, closest-point queries, and furthest-point queries.
 
@@ -168,6 +168,25 @@ get_intersection(bv, plane) # returns a new bounding volume (same as bv, since t
 ```
 
 See [Hyperplanes](@ref hyperplanes_manual) for more details.
+
+## Cones 
+
+A cone is created from a vertex, an axis, and a nonnegative slope. 
+
+```julia
+using SearchableGeometries.GeometricPrimitives 
+cone = Cone(
+    [0.0, 0.0], 
+    [1.0, 0.0], 
+    1.0
+) 
+``` 
+
+The constructor normalizes the axis automatically. 
+
+```julia 
+is_contained(cone, [2.0, 1.0]) # returns true
+``` 
 
 ## Common workflow
 
