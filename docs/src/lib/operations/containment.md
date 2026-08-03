@@ -34,3 +34,10 @@ is_contained(::Ball, ::BoundingVolume)
 ```@docs; canonical=false
 is_contained(::Hyperplane, ::Vector{<:Real})
 ```
+
+## Cones
+
+```@docs; canonical=false
+is_contained(::Cone, ::Vector{<:Real})
+is_contained(::Cone, ::BoundingVolume)
+```

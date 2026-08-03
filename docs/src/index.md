@@ -23,7 +23,7 @@ SearchableGeometries.jl provides types and methods for answering these questions
 ## Example
 
 ```julia
-using SearchableGeometries
+using SearchableGeometries.GeometricPrimitives
 
 bv = BoundingVolume([0.0, 0.0], [2.0, 1.0])
 pt = [3.0, 0.5]
@@ -58,6 +58,7 @@ The current package provides:
 - [BoundingVolume](@ref def_BoundingVolume)
 - [Ball](@ref def_Ball)
 - [Hyperplane](@ref def_Hyperplane)
+- [Cone](@ref def_Cone)
 - [Containment](@ref containment)
 - [Intersection](@ref intersection)
 - [Closest and Furthest Points](@ref closest_furthest_points)

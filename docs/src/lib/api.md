@@ -17,7 +17,7 @@ SearchableGeometry
 - [`BoundingVolume`](@ref)
 - [`Ball`](@ref)
 - [`Hyperplane`](@ref)
-- [`Cones`]
+- [`Cone`](@ref)
 
 ## Generic operations
 

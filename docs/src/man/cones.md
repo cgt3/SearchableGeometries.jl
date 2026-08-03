@@ -6,7 +6,7 @@ CurrentModule = SearchableGeometries.GeometricPrimitives
 
 A cone is a one-sided geometric region that expands outward from a vertex in the direction of an axis. 
 
-A [`Cone`](@ref) is represented by:
+A Cone is represented by:
 - a `vertex`, which is the starting point of the cone;
 - an `axis`, which determines the direction in which the cone opens;
 - a nonnegative `slope`, which determines how quickly the cone widens.
@@ -57,7 +57,11 @@ A cone can be constructed from a vertex, an axis, and a slope.
 ```julia 
 using SearchableGeometries.GeometricPrimitives 
 
-cone = Cone([0.0, 0.0], [1.0, 0.0], 1.0) 
+cone = Cone(
+    [0.0, 0.0], 
+    [1.0, 0.0], 
+    1.0
+) 
 ``` 
 
 In this example: 
@@ -135,7 +139,7 @@ This returns `false`.
 
 ## Bounding-volume containment 
 
-A cone may also contain an entire [`BoundingVolume`](@ref). 
+A cone may also contain an entire [`BoundingVolume`](@ref def_BoundingVolume). 
 
 ```julia 
 cone = Cone( [0.0, 0.0], [1.0, 0.0], 1.0) 
@@ -240,8 +244,8 @@ An error is thrown when:
 - `R_max` is smaller than `R_min`. 
 
 ## See also 
-- [`Cone`](@ref) 
-- [`BoundingVolume`](@ref) 
+- [`Cone`](@ref def_Cone) 
+- [`BoundingVolume`](@ref def_BoundingVolume) 
 - [`is_contained`](@ref) 
 - [`intersects`](@ref) 
 - [`get_intersection`](@ref)

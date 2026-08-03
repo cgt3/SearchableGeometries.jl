@@ -33,3 +33,10 @@ get_intersection(::BoundingVolume, ::Ball)
 intersects(::BoundingVolume, ::Hyperplane)
 get_intersection(::BoundingVolume, ::Hyperplane)
 ```
+
+## Cone with bounding volume 
+
+```@docs; canonical=false
+intersects(::Cone, ::BoundingVolume)
+get_intersection(::Cone, ::BoundingVolume)
+```

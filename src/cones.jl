@@ -1,3 +1,68 @@
+@doc raw""" 
+    Cone(vertex, axis, slope)
+
+Construct a one-sided Euclidean cone. 
+
+The constructor normalizes `axis`. 
+
+For a point `x`, define 
+```math 
+R(x) = a^\mathsf{T}(x-v)
+``` 
+
+and 
+
+```math 
+r(x) = \left\|x-v-R(x)a\right\|_2,
+```
+
+where `v` is the cone vertex and `a` is the normalized cone axis. 
+
+The cone contains points satisfying 
+```math 
+R(x) \geq 0 
+``` 
+
+and 
+
+```math 
+r(x) \leq slope\,R(x).
+``` 
+
+# Arguments 
+
+- `vertex::Vector{<:Real}`: Vertex of the cone. 
+- `axis::Vector{<:Real}`: Nonzero direction in which the cone opens. 
+- `slope::Real`: Nonnegative rate at which the cone widens. 
+
+# Fields 
+
+- `vertex`: Cone vertex. 
+- `axis`: Normalized cone axis. 
+- `slope`: Cone slope. 
+
+# Throws 
+
+Throws an error when: 
+- `vertex` and `axis` have different dimensions; 
+- `axis` is the zero vector; 
+- `slope` is negative. 
+
+# Examples 
+
+```julia
+using SearchableGeometries.GeometricPrimitives
+
+cone = Cone(
+    [0.0, 0.0],
+    [1.0, 0.0],
+    1.0
+)
+```
+# See also 
+
+[`BoundingVolume`](@ref), [`is_contained`](@ref), [`intersects`](@ref), [`get_intersection`](@ref) 
+"""
 struct Cone <: SearchableGeometry
     vertex::Vector
     axis::Vector
@@ -36,6 +101,47 @@ function get_radii(cone::Cone, p::Vector{<:Real})
     return R, r
 end
 
+@doc raw""" 
+    is_contained(cone::Cone, query_pt::Vector{<:Real}; include_boundary=true)
+
+Test whether `query_pt` lies inside `cone`. 
+
+A point is contained when: 
+
+1. its axial distance from the cone vertex is nonnegative; and 
+2. its perpendicular distance from the cone axis does not exceed the cone radius at that axial distance. 
+
+Set `include_boundary=false` to exclude points on the cone surface and the cone vertex. 
+
+The dimensions of `query_pt` and `cone` must match. 
+
+# Arguments 
+
+- `cone::Cone`: Cone used for the containment test. 
+- `query_pt::Vector{<:Real}`: Point being tested. 
+- `include_boundary::Bool=true`: Whether points on the cone boundary are considered contained. 
+
+# Returns 
+
+Returns `true` when `query_pt` is contained in `cone`. Otherwise, returns `false`. 
+
+# Examples 
+
+```julia
+using SearchableGeometries.GeometricPrimitives
+
+cone = Cone(
+    [0.0, 0.0],
+    [1.0, 0.0],
+    1.0
+)
+is_contained(cone, [2.0, 1.0]) 
+# true
+
+is_contained(cone, [2.0, 3.0]) 
+# false
+```
+"""
 function is_contained(cone::Cone, query_pt::Vector{<:Real}; include_boundary=true)
     R, r = get_radii(cone, query_pt)
     if include_boundary
@@ -92,6 +198,51 @@ function BoundingVolume(lb_func::Line, ub_func::Line, R1::Real, R2::Real; tol::R
     return BoundingVolume(min.(lb1, lb2), max.(ub1, ub2); tol=tol)
 end
 
+@doc raw""" 
+    BoundingVolume(cone::Cone, R_min::Real, R_max::Real, tol=DEFAULT_BV_POINT_TOL)
+    
+Construct an axis-aligned bounding volume enclosing the section of `cone` between axial radii `R_min` and `R_max`. 
+
+The axial radii must satisfy 
+
+```math 
+0 \leq R_{\min} \leq R_{\max}.
+``` 
+
+# Arguments 
+
+- `cone::Cone`: Cone being bounded. 
+- `R_min::Real`: Minimum axial radius of the truncated cone section. 
+- `R_max::Real`: Maximum axial radius of the truncated cone section. 
+- `tol::Real=DEFAULT_BV_POINT_TOL`: Numerical tolerance used by the construction. 
+
+# Returns 
+
+Returns a [`BoundingVolume`](@ref) enclosing the truncated cone section. 
+
+# Throws 
+
+Throws an error when: 
+- `R_min` is negative; 
+- `R_max` is smaller than `R_min`. 
+
+# Examples 
+
+```julia
+using SearchableGeometries.GeometricPrimitives
+
+cone = Cone(
+    [0.0, 0.0],
+    [1.0, 0.0],
+    1.0
+)
+bv = BoundingVolume(
+    cone,
+    0.0,
+    2.0
+    )
+``` 
+"""
 function BoundingVolume(cone::Cone, R_min::Real, R_max::Real, tol::Real=DEFAULT_BV_POINT_TOL)
     if R_max < R_min
         throw("SearchableGeometries.GeometricPrimitives.Cone: Cannot construct bounding volume with R_max < R_min (R_max=$(R_max), R_min=$(R_min))")
@@ -132,6 +283,32 @@ function get_alpha(bv::BoundingVolume, vertex::Vector{<:Real}, axis::Vector{<:Re
     return r / R
 end
 
+@doc raw""" 
+    is_contained(cone::Cone, query_bv::BoundingVolume; include_boundary=true, tol=DEFAULT_BV_POINT_TOL,)
+    
+Test whether the complete bounding volume `query_bv` lies inside `cone`. 
+
+The result is `true` only when every point in `query_bv` is contained in the cone. 
+
+Set `include_boundary=false` to require strict containment. 
+
+The dimensions of `cone` and `query_bv` must match. 
+
+# Arguments 
+
+- `cone::Cone`: Cone used for the containment test. 
+- `query_bv::BoundingVolume`: Bounding volume being tested. 
+- `include_boundary::Bool=true`: Whether the cone boundary is included. 
+- `tol::Real=DEFAULT_BV_POINT_TOL`: Numerical tolerance. 
+
+# Returns 
+
+Returns `true` when `query_bv` is completely contained in `cone`. Otherwise, returns `false`. 
+
+# See also 
+
+[`is_contained(::Cone, ::Vector{<:Real})`](@ref), [`intersects(::Cone, ::BoundingVolume)`](@ref) 
+"""
 function is_contained(cone::Cone, query_bv::BoundingVolume; include_boundary::Bool=true, tol::Real=DEFAULT_BV_POINT_TOL)
     if length(query_bv.lb) != length(cone.vertex)
         throw("SearchableGeometries.GeometricPrimitives.Cone: bounding volume dimension($(length(query_bv.lb))) does not match cone dimension($(length(cone.vertex)))")
@@ -148,6 +325,32 @@ function is_contained(cone::Cone, query_bv::BoundingVolume; include_boundary::Bo
     end
 end
 
+@doc raw""" 
+    intersects(cone::Cone, bv::BoundingVolume; include_boundary=true, tol=DEFAULT_BV_POINT_TOL) 
+    
+Test whether `cone` and `bv` have a nonempty intersection. 
+
+When `include_boundary=true`, boundary-only contact counts as an intersection. 
+
+When `include_boundary=false`, the cone and bounding volume must have a strict interior intersection. 
+
+The dimensions of `cone` and `bv` must match. 
+
+# Arguments 
+
+- `cone::Cone`: Cone used in the intersection test. 
+- `bv::BoundingVolume`: Bounding volume used in the intersection test. 
+- `include_boundary::Bool=true`: Whether boundary-only contact counts as an intersection. 
+- `tol::Real=DEFAULT_BV_POINT_TOL`: Numerical tolerance. 
+
+# Returns 
+
+Returns `true` when `cone` and `bv` intersect. Otherwise, returns `false`. 
+
+# See also 
+
+[`get_intersection(::Cone, ::BoundingVolume)`](@ref), [`is_contained(::Cone, ::BoundingVolume)`](@ref) 
+"""
 function intersects(cone::Cone, bv::BoundingVolume; include_boundary::Bool=true, tol::Real=DEFAULT_BV_POINT_TOL)
     if length(bv.lb) != length(cone.vertex)
         throw("SearchableGeometries.GeometricPrimitives.Cone: bounding volume dimension($(length(bv.lb))) does not match cone dimension($(length(cone.vertex)))")
@@ -174,6 +377,33 @@ function intersects(cone::Cone, bv::BoundingVolume; include_boundary::Bool=true,
     end
 end
 
+@doc raw""" 
+    get_intersection(cone::Cone, bv::BoundingVolume; tol=DEFAULT_BV_POINT_TOL, ) 
+    
+Return an axis-aligned bounding volume enclosing the intersection of `cone` and `bv`. 
+
+The exact intersection may have curved or sloped boundaries and therefore may not itself be an axis-aligned bounding volume. 
+
+This method returns a conservative bounding-volume enclosure of the exact intersection. 
+
+If `cone` and `bv` do not intersect, the method returns an empty `BoundingVolume`. 
+
+The dimensions of `cone` and `bv` must match. 
+
+# Arguments 
+
+- `cone::Cone`: Cone used in the intersection. 
+- `bv::BoundingVolume`: Bounding volume used in the intersection. 
+- `tol::Real=DEFAULT_BV_POINT_TOL`: Numerical tolerance. 
+
+# Returns 
+
+Returns a [`BoundingVolume`](@ref) enclosing the exact intersection. 
+
+# See also 
+
+[`intersects(::Cone, ::BoundingVolume)`](@ref), [`is_contained(::Cone, ::BoundingVolume)`](@ref)
+"""
 function get_intersection(cone::Cone, bv::BoundingVolume; tol::Real=DEFAULT_BV_POINT_TOL)
     if !intersects(cone, bv; include_boundary=true, tol=tol)
         return BoundingVolume()

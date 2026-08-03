@@ -44,6 +44,7 @@ makedocs(
                 "Bounding Volumes" => "lib/types/bounding_volumes.md",
                 "Balls" => "lib/types/balls.md",
                 "Hyperplanes" => "lib/types/hyperplanes.md",
+                "Cones" => "lib/types/cones.md"
             ],
             "Operations" => [
                 "Containment" => "lib/operations/containment.md",
