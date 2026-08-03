@@ -1,7 +1,7 @@
 name = "SearchableGeometries"
 uuid = "0d49ff20-b62b-4542-99e1-46442543f9f8"
-authors = ["Christina Taylor <cgtaylor@boisestate.edu>", "Emmanuel Kwame Ayanful <emmanuelayanful@u.boisestate.edu>"]
 version = "0.1.0"
+authors = ["Christina Taylor <cgtaylor@boisestate.edu>", "Emmanuel Kwame Ayanful <emmanuelayanful@u.boisestate.edu>"]
 
 [deps]
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"

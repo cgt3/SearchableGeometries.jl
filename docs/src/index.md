@@ -1,41 +1,69 @@
+# SearchableGeometries.jl
+
 ```@meta
-CurrentModule = SearchableGeometries
+CurrentModule = SearchableGeometries.GeometricPrimitives
 ```
 
-# SearchableGeometries
+SearchableGeometries.jl provides geometric tools for building searchable geometric structures.
 
-[SearchableGeometries](https://github.com/cgt3/SearchableGeometries.jl) provides geometric primitives and query operations for working with axis-aligned bounding volumes and balls.
+The package currently provides four main geometric types: 
+- [`BoundingVolume`](@ref): an axis-aligned box or hyperrectangle; 
+- [`Ball`](@ref): a region defined using a center, radius, and ``p``-norm; 
+- [`Hyperplane`](@ref): an affine surface represented by a point and normal; 
+- [`Cone`](@ref): a one-sided region represented by a vertex, axis, and slope.
 
-## Installation
+## Introduction
+
+Search algorithms often need to answer geometric questions quickly:
+
+- Is this point inside this region?
+- Do these two regions intersect?
+- What is the closest point in a region to a query point?
+- What is the furthest point in a region from a query object?
+- Can a bounding volume be tightened around an intersection?
+
+SearchableGeometries.jl provides types and methods for answering these questions.
+
+## Example
 
 ```julia
-using Pkg
-Pkg.add("SearchableGeometries")
+using SearchableGeometries.GeometricPrimitives
+
+bv = BoundingVolume([0.0, 0.0], [2.0, 1.0])
+pt = [3.0, 0.5]
+
+closest_pt = get_closest_point(bv, pt) # returns [2.0, 0.5]
 ```
 
-## Usage
+## Features
 
-```julia
-using SearchableGeometries
+The current package provides:
 
-# Create a bounding volume
-bv = BoundingVolume([0.0, 0.0], [1.0, 1.0])
+- axis-aligned bounding volumes;
+- ``p``-norm balls;
+- affine hyperplanes;
+- containment tests;
+- intersection tests;
+- closest-point and furthest-point queries;
+- bounding-volume tightening routines.
 
-# Create a ball
-ball = Ball([0.5, 0.5], 0.25)
+## Manual Outline
 
-# Check if a point is contained in the bounding volume
-point = [0.5, 0.5]
-println(isContained(bv, point))
+- [Getting Started](@ref getting_started)
+- [Bounding Volumes](@ref bounding_volumes_manual)
+- [Balls](@ref balls_manual)
+- [Hyperplanes](@ref hyperplanes_manual)
+- [Cones](@ref cones_manual)
+- [Geometric Search](@ref geometric_search)
 
-# Check if a point is contained in the ball
-println(isContained(ball, point))
+## Library Outline
 
-# Check if two bounding volumes intersect
-bv2 = BoundingVolume([0.5, 0.5], [1.5, 1.5])
-println(intersects(bv, bv2))
+- [API Reference](@ref)
+- [BoundingVolume](@ref def_BoundingVolume)
+- [Ball](@ref def_Ball)
+- [Hyperplane](@ref def_Hyperplane)
+- [Cone](@ref def_Cone)
+- [Containment](@ref containment)
+- [Intersection](@ref intersection)
+- [Closest and Furthest Points](@ref closest_furthest_points)
 
-# Get the intersection of two bounding volumes
-intersection = getIntersection(bv, bv2)
-println(intersection)
-```
