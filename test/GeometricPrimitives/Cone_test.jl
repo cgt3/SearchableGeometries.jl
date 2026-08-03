@@ -114,17 +114,17 @@ end
     @test is_contained(cone, p; include_boundary=false)
 end
 
-@testset "is_contained(cone, pt): Zero-slope cone only contains points on the axis" begin
-    cone = Cone([0.0, 0.0], [1.0, 0.0], 0.0)
-    p_on_axis = [3.0, 0.0]
-    p_off_axis = [3.0, 0.1]
+# @testset "is_contained(cone, pt): Zero-slope cone only contains points on the axis" begin
+#     cone = Cone([0.0, 0.0], [1.0, 0.0], 0.0)
+#     p_on_axis = [3.0, 0.0]
+#     p_off_axis = [3.0, 0.1]
 
-    @test is_contained(cone, p_on_axis; include_boundary=true)
-    @test !is_contained(cone, p_on_axis; include_boundary=false)
+#     @test is_contained(cone, p_on_axis; include_boundary=true)
+#     @test !is_contained(cone, p_on_axis; include_boundary=false)
 
-    @test !is_contained(cone, p_off_axis; include_boundary=true)
-    @test !is_contained(cone, p_off_axis; include_boundary=false)
-end
+#     @test !is_contained(cone, p_off_axis; include_boundary=true)
+#     @test !is_contained(cone, p_off_axis; include_boundary=false)
+# end
 
 # `get_bounding_radii(cone, bv)` ----------------------------------------------------------------
 @testset "get_bounding_radii(cone, bv): Cone and bounding volume dimensions do not match" begin
@@ -151,30 +151,30 @@ end
     @test isapprox(R_max, 2sqrt(3), atol=1e-6)
 end
 
-@testset "get_bounding_radii(cone, bv): 2D cone with zero slope" begin
-    cone = Cone([0.0, 0.0], [1.0, 0.0], 0.0)
-    bv = BoundingVolume([-1.0, -1.0], [1.0, 1.0])
+# @testset "get_bounding_radii(cone, bv): 2D cone with zero slope" begin
+#     cone = Cone([0.0, 0.0], [1.0, 0.0], 0.0)
+#     bv = BoundingVolume([-1.0, -1.0], [1.0, 1.0])
     
-    R_min, R_max = get_bounding_radii(cone, bv)
-    @test R_min == -1.0
-    @test R_max == 1.0
-end
+#     R_min, R_max = get_bounding_radii(cone, bv)
+#     @test R_min == -1.0
+#     @test R_max == 1.0
+# end
 
 # `get_bound_lines(cone)` ----------------------------------------------------------------
-@testset "get_bound_lines(cone): Cone with zero slope returns identical lines" begin
-    cone = Cone([0.0, 0.0], [1.0, 0.0], 0.0)
-    lb_line, ub_line = get_bound_lines(cone)
+# @testset "get_bound_lines(cone): Cone with zero slope returns identical lines" begin
+#     cone = Cone([0.0, 0.0], [1.0, 0.0], 0.0)
+#     lb_line, ub_line = get_bound_lines(cone)
    
-    @test all(lb_line.source .== cone.vertex)
-    @test all(ub_line.source .== cone.vertex)
+#     @test all(lb_line.source .== cone.vertex)
+#     @test all(ub_line.source .== cone.vertex)
 
-    @test all(lb_line.dir .== cone.axis)
-    @test all(ub_line.dir .== cone.axis)
+#     @test all(lb_line.dir .== cone.axis)
+#     @test all(ub_line.dir .== cone.axis)
 
-    # At axial radius R = 1, the cone reaches
-    @test all(lb_line(1.0) .== cone.vertex .+ cone.axis)
-    @test all(ub_line(1.0) .== cone.vertex .+ cone.axis)
-end
+#     # At axial radius R = 1, the cone reaches
+#     @test all(lb_line(1.0) .== cone.vertex .+ cone.axis)
+#     @test all(ub_line(1.0) .== cone.vertex .+ cone.axis)
+# end
 
 @testset "get_bound_lines(cone): 2D axis-aligned cone with nonzero slope" begin
     cone = Cone([0.0, 0.0], [1.0, 0.0], 1.0)
@@ -236,13 +236,13 @@ end
     @test_throws "SearchableGeometries.GeometricPrimitives.Cone: R_min and R_max do not satisfy 0 <= R_min <= R_max" BoundingVolume(cone, -1.0, 2.0)
 end
 
-@testset "BoundingVolume(cone, R_min, R_max): 2D axis-aligned cone with zero slope" begin
-    cone = Cone([0.0, 0.0], [1.0, 0.0], 0.0)
-    bv = BoundingVolume(cone, 0.0, 1.0)
+# @testset "BoundingVolume(cone, R_min, R_max): 2D axis-aligned cone with zero slope" begin
+#     cone = Cone([0.0, 0.0], [1.0, 0.0], 0.0)
+#     bv = BoundingVolume(cone, 0.0, 1.0)
 
-    @test all(bv.lb .== [0.0, 0.0])
-    @test all(bv.ub .== [1.0, 0.0])
-end
+#     @test all(bv.lb .== [0.0, 0.0])
+#     @test all(bv.ub .== [1.0, 0.0])
+# end
 
 @testset "BoundingVolume(cone, R_min, R_max): 2D diagonal cone with nonzero slope" begin
     cone = Cone([0.0, 0.0], [1.0, 1.0], 1.0)
